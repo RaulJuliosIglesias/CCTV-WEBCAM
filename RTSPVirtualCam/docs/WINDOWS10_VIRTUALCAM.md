@@ -1,25 +1,35 @@
 # Windows 10 Virtual Camera Setup
 
-This document explains how to enable virtual camera support on Windows 10 using SoftCam.
+This document explains how to enable virtual camera support on Windows 10 using **UnityCapture**.
 
 ## Why is this needed?
 
 | Windows Version | Virtual Camera Method | Needs Setup |
 |-----------------|----------------------|-------------|
 | **Windows 11** | Native `MFCreateVirtualCamera` API | ❌ No |
-| **Windows 10** | SoftCam DirectShow filter | ✅ Yes (one-time) |
+| **Windows 10** | UnityCapture DirectShow filter | ✅ Yes (one-time) |
 
-Windows 10 does not have the `MFCreateVirtualCamera` API, so we use **SoftCam** - an open-source DirectShow virtual camera.
+Windows 10 does not have the native virtual camera API, so we use **UnityCapture** - an open-source DirectShow virtual camera driver that works with Zoom, Teams, OBS, etc.
 
 ---
 
-## Option 1: Automatic Setup (Recommended)
+## Option 1: Automatic Setup (In-App)
+
+1. Open **RTSP VirtualCam**
+2. In the "WINDOWS 10 DRIVER" section (bottom left), click **Install**
+3. Accept the Administrator prompt
+4. Wait for "✅ Driver installed" message
+
+---
+
+## Option 2: Script Setup
 
 ### Install
 Run `install-virtualcam.bat` **as Administrator**:
 ```cmd
 .\scripts\install-virtualcam.bat
 ```
+This script will download the driver from GitHub and register it.
 
 ### Uninstall
 Run `uninstall-virtualcam.bat` **as Administrator**:
@@ -29,67 +39,30 @@ Run `uninstall-virtualcam.bat` **as Administrator**:
 
 ---
 
-## Option 2: Manual Setup
-
-### Step 1: Download SoftCam
-
-Download the pre-built DLL from:
-- [SoftCam Releases](https://github.com/tshino/softcam/releases)
-
-Or build from source:
-```powershell
-git clone https://github.com/tshino/softcam.git
-cd softcam
-# Build with Visual Studio or CMake
-```
-
-### Step 2: Register the DLL
-
-**As Administrator:**
-```cmd
-# For 64-bit
-regsvr32 "C:\Path\To\softcam.dll"
-
-# For 32-bit (if needed)
-regsvr32 "C:\Path\To\softcam_x86.dll"
-```
-
-### Step 3: Verify
-
-Open any video app (Zoom, Teams, etc.) and look for "SoftCam" in the camera list.
-
----
-
-## Uninstalling
-
-**As Administrator:**
-```cmd
-regsvr32 /u "C:\Path\To\softcam.dll"
-```
-
-This completely removes the virtual camera from your system.
-
----
-
 ## Troubleshooting
 
-### "DLL Registration failed"
-- Run as Administrator
-- Make sure Visual C++ Redistributable is installed
+### "Download failed"
+- Check your internet connection
+- Try manual installation steps below
 
-### Camera not appearing in apps
-- Restart the application after registration
-- Some apps need a full restart (not just the camera picker)
+### Manual Installation
+1. Download the driver zip: [UnityCapture Master](https://github.com/schellingb/UnityCapture/archive/refs/heads/master.zip)
+2. Extract the zip file
+3. Go to `Install` folder inside the zip
+4. Copy `UnityCaptureFilter64.dll` to `scripts/softcam/` folder in the application directory
+5. Run `install-virtualcam.bat` again
+
+### Camera name
+The camera will appear as **"Unity Video Capture"** in your video applications.
 
 ### 32-bit vs 64-bit
-- Use the DLL that matches your application (most are 64-bit)
-- Some older apps may need the 32-bit version
+- The installer prioritizes the 64-bit driver (standard for modern apps)
+- It also registers the 32-bit driver if available
 
 ---
 
 ## Security Notes
 
-- ✅ SoftCam is open-source (MIT license)
-- ✅ No external network access
-- ✅ Can be completely removed with `regsvr32 /u`
-- ✅ Does not modify system files
+- ✅ UnityCapture is open-source (MIT license)
+- ✅ Drivers are downloaded directly from the official GitHub repository
+- ✅ Can be completely removed with `uninstall-virtualcam.bat`

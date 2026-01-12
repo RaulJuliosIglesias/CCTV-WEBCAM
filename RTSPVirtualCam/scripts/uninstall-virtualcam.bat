@@ -1,13 +1,15 @@
 @echo off
 :: ===========================================
 :: RTSP VirtualCam - Virtual Camera Uninstaller
-:: Removes SoftCam DirectShow filter
+:: Uses OBS Virtual Camera
 :: ===========================================
 :: Run this script as Administrator!
 
+@cd /d "%~dp0"
+
 echo.
 echo ========================================
-echo  RTSP VirtualCam - Uninstall Virtual Cam
+echo  RTSP VirtualCam - Virtual Camera Removal
 echo ========================================
 echo.
 
@@ -22,27 +24,34 @@ if %errorLevel% neq 0 (
     exit /b 1
 )
 
+echo [OK] Running as Administrator
+echo.
+
 :: Set paths
 set SCRIPT_DIR=%~dp0
-set SOFTCAM_DLL=%SCRIPT_DIR%softcam\softcam.dll
-set SOFTCAM_DLL_X86=%SCRIPT_DIR%softcam\softcam_x86.dll
+set DRIVER_DIR=%SCRIPT_DIR%softcam
+set DLL64=%DRIVER_DIR%\obs-virtualcam-module64.dll
+set DLL32=%DRIVER_DIR%\obs-virtualcam-module32.dll
 
-echo.
+:: Unregister 64-bit DLL
 echo [STEP 1] Unregistering 64-bit virtual camera...
-if exist "%SOFTCAM_DLL%" (
-    regsvr32 /u /s "%SOFTCAM_DLL%"
+reg query "HKLM\SOFTWARE\Classes\CLSID\{A3FCE0F5-3493-419F-958A-ABA1250EC20B}" >nul 2>&1
+if %errorLevel% == 0 (
+    regsvr32.exe /u /s "%DLL64%"
     echo [OK] 64-bit virtual camera unregistered
 ) else (
-    echo [SKIP] 64-bit DLL not found
+    echo [INFO] 64-bit virtual camera not registered, skipping
 )
 
+:: Unregister 32-bit DLL
 echo.
 echo [STEP 2] Unregistering 32-bit virtual camera...
-if exist "%SOFTCAM_DLL_X86%" (
-    regsvr32 /u /s "%SOFTCAM_DLL_X86%"
+reg query "HKLM\SOFTWARE\Classes\WOW6432Node\CLSID\{A3FCE0F5-3493-419F-958A-ABA1250EC20B}" >nul 2>&1
+if %errorLevel% == 0 (
+    regsvr32.exe /u /s "%DLL32%"
     echo [OK] 32-bit virtual camera unregistered
 ) else (
-    echo [SKIP] 32-bit DLL not found
+    echo [INFO] 32-bit virtual camera not registered, skipping
 )
 
 echo.
@@ -50,8 +59,9 @@ echo ========================================
 echo  UNINSTALL COMPLETE!
 echo ========================================
 echo.
-echo The virtual camera has been removed from your system.
+echo The virtual camera "OBS Virtual Camera" has been removed.
 echo.
-echo You can safely delete the softcam folder now.
+echo IMPORTANT: Restart your video apps to see the change.
 echo.
 pause
+exit /b 0

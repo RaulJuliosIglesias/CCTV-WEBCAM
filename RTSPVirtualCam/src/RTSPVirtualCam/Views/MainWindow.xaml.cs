@@ -1,5 +1,7 @@
 using System;
+using System.Diagnostics;
 using System.Windows;
+using System.Windows.Navigation;
 using LibVLCSharp.Shared;
 using RTSPVirtualCam.Services;
 using RTSPVirtualCam.ViewModels;
@@ -34,6 +36,16 @@ public partial class MainWindow : Window
                 });
             }
         };
+    }
+    
+    private void Hyperlink_RequestNavigate(object sender, RequestNavigateEventArgs e)
+    {
+        Process.Start(new ProcessStartInfo
+        {
+            FileName = e.Uri.AbsoluteUri,
+            UseShellExecute = true
+        });
+        e.Handled = true;
     }
     
     private void OpenSettings_Click(object sender, RoutedEventArgs e)

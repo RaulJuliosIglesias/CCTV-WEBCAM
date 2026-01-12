@@ -30,6 +30,9 @@
     <PackageReference Include="Serilog.Sinks.File" Version="5.0.0" />
     <PackageReference Include="Serilog.Sinks.Console" Version="5.0.1" />
     
+    <!-- System Management for WMI queries -->
+    <PackageReference Include="System.Management" Version="8.0.0" />
+    
     <!-- DI Container -->
     <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="8.0.0" />
   </ItemGroup>

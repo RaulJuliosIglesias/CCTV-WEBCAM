@@ -13,6 +13,7 @@
     <Window.Resources>
         <BooleanToVisibilityConverter x:Key="BoolToVisibility"/>
         <helpers:InverseBooleanToVisibilityConverter x:Key="InverseBoolToVisibility"/>
+        <helpers:InverseBooleanConverter x:Key="InverseBooleanConverter"/>
         
         <!-- Fixed Dark Theme Styles -->
         <Style x:Key="ModernTextBox" TargetType="TextBox">
@@ -313,6 +314,67 @@
                                        FontSize="10"/>
                         </StackPanel>
                     </Border>
+                    
+                    <!-- Windows 10 Virtual Camera Driver Panel -->
+                    <Border Background="#313244" CornerRadius="6" Padding="12" Margin="0,15,0,0"
+                            Visibility="{Binding UseWindows10Mode, Converter={StaticResource BoolToVisibility}}">
+                        <StackPanel>
+                            <TextBlock Text="🪟 WINDOWS 10 - VIRTUAL CAMERA" 
+                                       Foreground="#F9E2AF"
+                                       FontSize="11"
+                                       FontWeight="Bold"
+                                       Margin="0,0,0,8"/>
+                            
+                            <TextBlock Text="{Binding DriverStatus}" 
+                                       Foreground="#A6E3A1"
+                                       FontSize="10"
+                                       TextWrapping="Wrap"
+                                       Margin="0,0,0,8"/>
+                            
+                            <!-- Install/Uninstall Buttons -->
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                
+                                <Button Grid.Column="0" 
+                                        Content="🔧 Install" 
+                                        Command="{Binding InstallDriverCommand}"
+                                        Style="{StaticResource SuccessButton}"
+                                        IsEnabled="{Binding IsInstallingDriver, Converter={StaticResource InverseBooleanConverter}}"
+                                        Padding="10,8"
+                                        FontSize="11"
+                                        Margin="0,0,4,0"/>
+                                
+                                <Button Grid.Column="1" 
+                                        Content="🗑️ Uninstall" 
+                                        Command="{Binding UninstallDriverCommand}"
+                                        Style="{StaticResource DangerButton}"
+                                        IsEnabled="{Binding IsInstallingDriver, Converter={StaticResource InverseBooleanConverter}}"
+                                        Padding="10,8"
+                                        FontSize="11"
+                                        Margin="4,0,0,0"/>
+                            </Grid>
+                            
+                            <!-- Installing Indicator -->
+                            <StackPanel Orientation="Horizontal" 
+                                        Visibility="{Binding IsInstallingDriver, Converter={StaticResource BoolToVisibility}}"
+                                        Margin="0,8,0,0">
+                                <TextBlock Text="⏳" FontSize="12" Margin="0,0,5,0" VerticalAlignment="Center"/>
+                                <TextBlock Text="Installing driver..." 
+                                           Foreground="#F9E2AF"
+                                           FontSize="10"
+                                           VerticalAlignment="Center"/>
+                            </StackPanel>
+                            
+                            <TextBlock Text="ℹ️ OBS Virtual Camera - Works with Chrome/Zoom/Teams" 
+                                       Foreground="#6C7086"
+                                       FontSize="9"
+                                       TextWrapping="Wrap"
+                                       Margin="0,8,0,0"/>
+                        </StackPanel>
+                    </Border>
                 </StackPanel>
             </ScrollViewer>
         </Border>
@@ -392,11 +454,21 @@
                     
                     <Border Grid.Row="0" Background="#1E1E2E" Padding="10,6">
                         <Grid>
-                            <TextBlock Text="📋 LOG" Foreground="#6C7086" FontSize="10" FontWeight="Bold"/>
-                            <Button Content="Clear" HorizontalAlignment="Right" 
-                                    Command="{Binding ClearLogCommand}"
-                                    Background="Transparent" Foreground="#6C7086" 
-                                    BorderThickness="0" Padding="5,2" FontSize="10" Cursor="Hand"/>
+                            <TextBlock Text="📋 LOG" Foreground="#6C7086" FontSize="10" FontWeight="Bold" VerticalAlignment="Center"/>
+                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                                <Button Content="📋 Copy" 
+                                        Command="{Binding CopyLogsCommand}"
+                                        Background="Transparent" Foreground="#A6E3A1" 
+                                        BorderThickness="0" Padding="8,2" FontSize="10" Cursor="Hand" Margin="0,0,5,0"/>
+                                <Button Content="📂 Open" 
+                                        Command="{Binding OpenLogFileCommand}"
+                                        Background="Transparent" Foreground="#89B4FA" 
+                                        BorderThickness="0" Padding="8,2" FontSize="10" Cursor="Hand" Margin="0,0,5,0"/>
+                                <Button Content="🗑 Clear" 
+                                        Command="{Binding ClearLogCommand}"
+                                        Background="Transparent" Foreground="#6C7086" 
+                                        BorderThickness="0" Padding="8,2" FontSize="10" Cursor="Hand"/>
+                            </StackPanel>
                         </Grid>
                     </Border>
                     

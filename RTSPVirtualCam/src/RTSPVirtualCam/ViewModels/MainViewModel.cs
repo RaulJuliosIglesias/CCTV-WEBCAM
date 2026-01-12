@@ -1,6 +1,7 @@
 using System;
 using System.Linq;
 using System.Text;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Threading.Tasks;
 using CommunityToolkit.Mvvm.ComponentModel;
@@ -8,6 +9,7 @@ using CommunityToolkit.Mvvm.Input;
 using RTSPVirtualCam.Models;
 using RTSPVirtualCam.Services;
 using Serilog;
+using System.Management;
 
 namespace RTSPVirtualCam.ViewModels;
 
@@ -126,6 +128,9 @@ public partial class MainViewModel : ObservableObject
         UpdateGeneratedUrl();
     }
     
+    private static readonly string LogFilePath = System.IO.Path.Combine(
+        AppContext.BaseDirectory, "logs", $"rtspvirtualcam_{DateTime.Now:yyyyMMdd_HHmmss}.log");
+    
     private void AddLog(string message)
     {
         var timestamp = DateTime.Now.ToString("HH:mm:ss");
@@ -133,6 +138,54 @@ public partial class MainViewModel : ObservableObject
         _logBuilder.AppendLine(logEntry);
         LogText = _logBuilder.ToString();
         Log.Information(message);
+        
+        // Also write to file
+        try
+        {
+            var logDir = System.IO.Path.GetDirectoryName(LogFilePath);
+            if (!System.IO.Directory.Exists(logDir))
+                System.IO.Directory.CreateDirectory(logDir!);
+            System.IO.File.AppendAllText(LogFilePath, logEntry + Environment.NewLine);
+        }
+        catch { /* Ignore file errors */ }
+    }
+    
+    [RelayCommand]
+    private void CopyLogs()
+    {
+        try
+        {
+            System.Windows.Clipboard.SetText(LogText);
+            AddLog("📋 Logs copied to clipboard!");
+        }
+        catch (Exception ex)
+        {
+            AddLog($"❌ Failed to copy: {ex.Message}");
+        }
+    }
+    
+    [RelayCommand]
+    private void OpenLogFile()
+    {
+        try
+        {
+            if (System.IO.File.Exists(LogFilePath))
+            {
+                System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
+                {
+                    FileName = LogFilePath,
+                    UseShellExecute = true
+                });
+            }
+            else
+            {
+                AddLog($"Log file: {LogFilePath}");
+            }
+        }
+        catch (Exception ex)
+        {
+            AddLog($"❌ Failed to open log: {ex.Message}");
+        }
     }
     
     [RelayCommand]
@@ -158,8 +211,8 @@ public partial class MainViewModel : ObservableObject
         }
         else
         {
-            VirtualCameraStatus = "⚠️ Windows 10 - SoftCam driver required";
-            AddLog("Windows 10 detected - Enabling Legacy Mode (SoftCam)");
+            VirtualCameraStatus = "⚠️ Windows 10 - Virtual camera driver required";
+            AddLog("Windows 10 detected - Virtual camera mode");
             UseWindows10Mode = true;
             CheckSoftCamStatus();
         }
@@ -167,30 +220,104 @@ public partial class MainViewModel : ObservableObject
     
     private void CheckSoftCamStatus()
     {
-        // Check if SoftCam is registered by looking for the DLL
-        // Ideally we would check registry, but file existence + user intent is a good proxy for now
-        // A better check would be trying to use DirectShow to find the filter
-        
-        // For now, checks if user has run the script
-        // In a real scenario we would check HKLM\SOFTWARE\Classes\CLSID\{GUID}
-        
-        // Let's assume 'Not installed' until proven otherwise, but we persist state across sessions if possible
-        // For this demo, we'll just check if the DLL exists in the expected location
-        
-        var dllPath = System.IO.Path.Combine(AppContext.BaseDirectory, "scripts", "softcam", "softcam.dll");
+        // Check if OBS VirtualCam DLL exists (included in package)
+        var dllPath = System.IO.Path.Combine(AppContext.BaseDirectory, "scripts", "softcam", "obs-virtualcam-module64.dll");
         var exists = System.IO.File.Exists(dllPath);
+        
+        AddLog($"🔍 Driver path: {dllPath}");
+        AddLog($"   DLL present: {exists}");
         
         if (!exists)
         {
-            DriverStatus = "❌ DLL missing";
+            DriverStatus = "❌ Driver files missing from package";
             IsSoftCamInstalled = false;
+            return;
         }
-        else
+        
+        var fileInfo = new System.IO.FileInfo(dllPath);
+        AddLog($"   DLL size: {fileInfo.Length / 1024} KB");
+        
+        // Check if already registered in Windows
+        try
         {
-            // We can't easily know if it's registered without P/Invoke, assume user knows
-            // Or we could check registry keys for SoftCam CLSID
-            DriverStatus = "Ready to install/uninstall";
-            IsSoftCamInstalled = false; // Defalt to allow install
+            var key = Microsoft.Win32.Registry.LocalMachine.OpenSubKey(
+                @"SOFTWARE\Classes\CLSID\{A3FCE0F5-3493-419F-958A-ABA1250EC20B}");
+            if (key != null)
+            {
+                DriverStatus = "✅ OBS Virtual Camera installed";
+                IsSoftCamInstalled = true;
+                AddLog("✅ OBS Virtual Camera is registered in Windows");
+                key.Close();
+            }
+            else
+            {
+                DriverStatus = "📥 Click Install to register driver";
+                IsSoftCamInstalled = true; // DLL exists, just needs registration
+                AddLog("⚠️ DLL present but not registered - click Install");
+            }
+        }
+        catch
+        {
+            DriverStatus = "📥 Click Install to register driver";
+            IsSoftCamInstalled = true;
+        }
+        
+        ListVideoDevices();
+    }
+    
+    private void ListVideoDevices()
+    {
+        AddLog("📹 Listing video capture devices...");
+        try
+        {
+            // Use DirectShow to enumerate video devices
+            var devices = new List<string>();
+            
+            // Query WMI for video devices
+            using (var searcher = new System.Management.ManagementObjectSearcher(
+                "SELECT * FROM Win32_PnPEntity WHERE PNPClass = 'Camera' OR PNPClass = 'Image'"))
+            {
+                foreach (var device in searcher.Get())
+                {
+                    var name = device["Name"]?.ToString() ?? "Unknown";
+                    devices.Add(name);
+                    AddLog($"   📷 {name}");
+                }
+            }
+            
+            if (devices.Count == 0)
+            {
+                AddLog("   ⚠️ No video capture devices found via WMI");
+            }
+            
+            // Also try to find DirectShow video devices via registry
+            try
+            {
+                var clsidKey = Microsoft.Win32.Registry.ClassesRoot.OpenSubKey(
+                    @"CLSID\{860BB310-5D01-11d0-BD3B-00A0C911CE86}\Instance");
+                if (clsidKey != null)
+                {
+                    var subkeys = clsidKey.GetSubKeyNames();
+                    AddLog($"   📹 DirectShow video sources: {subkeys.Length}");
+                    foreach (var subkey in subkeys)
+                    {
+                        var deviceKey = clsidKey.OpenSubKey(subkey);
+                        var friendlyName = deviceKey?.GetValue("FriendlyName")?.ToString();
+                        if (!string.IsNullOrEmpty(friendlyName))
+                        {
+                            AddLog($"      - {friendlyName}");
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                AddLog($"   ⚠️ Registry check error: {ex.Message}");
+            }
+        }
+        catch (Exception ex)
+        {
+            AddLog($"   ❌ Error listing devices: {ex.Message}");
         }
     }
 
@@ -198,23 +325,58 @@ public partial class MainViewModel : ObservableObject
     private async Task InstallDriverAsync()
     {
         IsInstallingDriver = true;
-        AddLog("Starting SoftCam installation...");
+        AddLog("═══════════════════════════════════════");
+        AddLog("Starting virtual camera installation...");
+        AddLog("═══════════════════════════════════════");
         
         try
         {
             var scriptPath = System.IO.Path.Combine(AppContext.BaseDirectory, "scripts", "install-virtualcam.bat");
+            var dllPath = System.IO.Path.Combine(AppContext.BaseDirectory, "scripts", "softcam", "obs-virtualcam-module64.dll");
+            
+            AddLog($"📁 Script path: {scriptPath}");
+            AddLog($"📁 DLL path: {dllPath}");
+            AddLog($"   Script exists: {System.IO.File.Exists(scriptPath)}");
+            AddLog($"   DLL exists: {System.IO.File.Exists(dllPath)}");
+            
             if (!System.IO.File.Exists(scriptPath)) 
             {
-                AddLog($"❌ Script not found: {scriptPath}");
+                AddLog($"❌ Script not found!");
                 IsInstallingDriver = false;
                 return;
             }
             
+            // Check registry BEFORE install
+            AddLog("🔍 Checking registry BEFORE install...");
+            CheckOBSVirtualCamRegistry();
+            
+            AddLog("🚀 Running installation script (requires admin)...");
             await RunAdminScriptAsync(scriptPath);
-            IsSoftCamInstalled = true;
-            DriverStatus = "✅ Driver installed (Restart apps to see 'SoftCam')";
-            AddLog("✅ Driver installation completed");
-            AddLog("💡 You may need to restart video apps (Zoom, Teams) to see 'SoftCam'");
+            
+            // Wait a moment for registration to complete
+            await Task.Delay(1000);
+            
+            // Check registry AFTER install
+            AddLog("🔍 Checking registry AFTER install...");
+            CheckOBSVirtualCamRegistry();
+            
+            // Check install log file
+            var installLog = System.IO.Path.Combine(AppContext.BaseDirectory, "scripts", "install_log.txt");
+            if (System.IO.File.Exists(installLog))
+            {
+                AddLog("📄 Install script log:");
+                var logContent = System.IO.File.ReadAllText(installLog);
+                foreach (var line in logContent.Split('\n').Take(20))
+                {
+                    if (!string.IsNullOrWhiteSpace(line))
+                        AddLog($"   {line.Trim()}");
+                }
+            }
+            
+            CheckSoftCamStatus();
+            AddLog("═══════════════════════════════════════");
+            AddLog("💡 Look for 'OBS Virtual Camera' in camera list");
+            AddLog("💡 RESTART video apps (Zoom, Teams, Chrome)");
         }
         catch (Exception ex)
         {
@@ -227,11 +389,43 @@ public partial class MainViewModel : ObservableObject
         }
     }
     
+    private void CheckOBSVirtualCamRegistry()
+    {
+        try
+        {
+            // Check 64-bit registration
+            var key64 = Microsoft.Win32.Registry.LocalMachine.OpenSubKey(
+                @"SOFTWARE\Classes\CLSID\{A3FCE0F5-3493-419F-958A-ABA1250EC20B}");
+            AddLog($"   64-bit CLSID registered: {key64 != null}");
+            key64?.Close();
+            
+            // Check 32-bit registration
+            var key32 = Microsoft.Win32.Registry.LocalMachine.OpenSubKey(
+                @"SOFTWARE\Classes\WOW6432Node\CLSID\{A3FCE0F5-3493-419F-958A-ABA1250EC20B}");
+            AddLog($"   32-bit CLSID registered: {key32 != null}");
+            key32?.Close();
+            
+            // Check video capture sources category
+            var vcKey = Microsoft.Win32.Registry.ClassesRoot.OpenSubKey(
+                @"CLSID\{860BB310-5D01-11d0-BD3B-00A0C911CE86}\Instance");
+            if (vcKey != null)
+            {
+                var subkeys = vcKey.GetSubKeyNames();
+                AddLog($"   Video capture sources: {subkeys.Length}");
+                vcKey.Close();
+            }
+        }
+        catch (Exception ex)
+        {
+            AddLog($"   ⚠️ Registry check error: {ex.Message}");
+        }
+    }
+    
     [RelayCommand]
     private async Task UninstallDriverAsync()
     {
         IsInstallingDriver = true;
-        AddLog("Removing SoftCam driver...");
+        AddLog("Removing UnityCapture driver...");
         
         try
         {
@@ -243,8 +437,7 @@ public partial class MainViewModel : ObservableObject
             }
             
             await RunAdminScriptAsync(scriptPath);
-            IsSoftCamInstalled = false;
-            DriverStatus = "✅ Driver removed";
+            CheckSoftCamStatus(); // Recheck status after uninstallation
             AddLog("✅ Driver successfully removed");
         }
         catch (Exception ex)
@@ -377,6 +570,31 @@ public partial class MainViewModel : ObservableObject
             return;
         }
         
+        // Windows 10 Support Path - Softcam
+        if (UseWindows10Mode)
+        {
+            if (!IsSoftCamInstalled)
+            {
+                AddLog("⚠️ Virtual camera driver not installed");
+                AddLog("👉 Click 'Install' button in the WINDOWS 10 DRIVER panel");
+                StatusText = "Driver not installed";
+                return;
+            }
+            
+            AddLog("✅ Virtual camera driver is installed!");
+            AddLog("📹 'OBS Virtual Camera' is registered");
+            AddLog("💡 Select 'OBS Virtual Camera' in your video app");
+            AddLog("ℹ️ Note: Restart video apps to see the camera");
+            AddLog($"   Your RTSP URL: {CurrentUrl}");
+            
+            StatusText = "Virtual Camera Ready";
+            StatusIcon = "🔵";
+            IsVirtualized = true;
+            AddToHistory(CurrentUrl);
+            return;
+        }
+
+        // Windows 11 Native Path
         if (!IsWindows11OrLater)
         {
             AddLog("❌ Windows 11 required for native virtual camera");

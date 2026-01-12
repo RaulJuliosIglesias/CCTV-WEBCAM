@@ -1,9 +1,16 @@
 @echo off
 :: ===========================================
 :: RTSP VirtualCam - Virtual Camera Installer
-:: For Windows 10 (uses SoftCam DirectShow)
+:: Uses OBS Virtual Camera (works with Chrome/Zoom/Teams)
 :: ===========================================
 :: Run this script as Administrator!
+
+@cd /d "%~dp0"
+
+:: Create log file
+set LOG_FILE=%~dp0install_log.txt
+echo. > "%LOG_FILE%"
+echo [%date% %time%] Installation started >> "%LOG_FILE%"
 
 echo.
 echo ========================================
@@ -22,65 +29,116 @@ if %errorLevel% neq 0 (
     exit /b 1
 )
 
-:: Check Windows version
-for /f "tokens=4-5 delims=. " %%i in ('ver') do set VERSION=%%i.%%j
-echo [INFO] Detected Windows version: %VERSION%
+echo [OK] Running as Administrator
+echo.
 
-:: Set paths
+:: Set paths - DLLs are included in the package
 set SCRIPT_DIR=%~dp0
-set SOFTCAM_DLL=%SCRIPT_DIR%softcam\softcam.dll
-set SOFTCAM_DLL_X86=%SCRIPT_DIR%softcam\softcam_x86.dll
+set DRIVER_DIR=%SCRIPT_DIR%softcam
+set DLL64=%DRIVER_DIR%\obs-virtualcam-module64.dll
+set DLL32=%DRIVER_DIR%\obs-virtualcam-module32.dll
 
-:: Check if DLL exists
-if not exist "%SOFTCAM_DLL%" (
+:: Verify DLLs exist
+echo [STEP 1] Verifying driver files...
+echo [INFO] 64-bit DLL: %DLL64% >> "%LOG_FILE%"
+echo [INFO] 32-bit DLL: %DLL32% >> "%LOG_FILE%"
+
+if not exist "%DLL64%" (
+    echo [ERROR] obs-virtualcam-module64.dll not found!
+    echo [ERROR] The driver files are missing from the package.
     echo.
-    echo [ERROR] SoftCam DLL not found at: %SOFTCAM_DLL%
-    echo.
-    echo Please download SoftCam from:
-    echo   https://github.com/tshino/softcam/releases
-    echo.
-    echo Then extract softcam.dll to:
-    echo   %SCRIPT_DIR%softcam\
+    echo Expected location: %DLL64%
     echo.
     pause
     exit /b 1
 )
 
-:: Register the DLL
+echo [OK] obs-virtualcam-module64.dll found
+dir "%DLL64%" >> "%LOG_FILE%"
+
+if exist "%DLL32%" (
+    echo [OK] obs-virtualcam-module32.dll found
+    dir "%DLL32%" >> "%LOG_FILE%"
+)
+
+:: Check if already installed
 echo.
-echo [STEP 1] Registering 64-bit virtual camera...
-regsvr32 /s "%SOFTCAM_DLL%"
-if %errorLevel% neq 0 (
-    echo [WARNING] 64-bit registration may have failed
+echo [STEP 2] Checking for existing installation...
+
+reg query "HKLM\SOFTWARE\Classes\CLSID\{A3FCE0F5-3493-419F-958A-ABA1250EC20B}" >nul 2>&1
+if %errorLevel% == 0 (
+    echo [INFO] 64-bit Virtual Cam already registered
+    echo [INFO] 64-bit already registered >> "%LOG_FILE%"
 ) else (
-    echo [OK] 64-bit virtual camera registered
+    echo [INFO] 64-bit Virtual Cam not found, installing...
+    goto install64
 )
 
-:: Optional: Register 32-bit version if exists
-if exist "%SOFTCAM_DLL_X86%" (
+reg query "HKLM\SOFTWARE\Classes\WOW6432Node\CLSID\{A3FCE0F5-3493-419F-958A-ABA1250EC20B}" >nul 2>&1
+if %errorLevel% == 0 (
+    echo [INFO] 32-bit Virtual Cam already registered
+    echo [INFO] 32-bit already registered >> "%LOG_FILE%"
+    goto endSuccess
+) else (
+    echo [INFO] 32-bit Virtual Cam not found, installing...
+    goto install32
+)
+
+:install32
+echo.
+echo [STEP 3] Registering 32-bit virtual camera...
+echo [INFO] Running: regsvr32 /i /s "%DLL32%" >> "%LOG_FILE%"
+
+regsvr32.exe /i /s "%DLL32%"
+
+reg query "HKLM\SOFTWARE\Classes\WOW6432Node\CLSID\{A3FCE0F5-3493-419F-958A-ABA1250EC20B}" >nul 2>&1
+if %errorLevel% == 0 (
+    echo [OK] 32-bit Virtual Cam successfully installed
+    echo [OK] 32-bit installed >> "%LOG_FILE%"
+) else (
+    echo [WARNING] 32-bit Virtual Cam installation may have failed
+    echo [WARNING] 32-bit failed >> "%LOG_FILE%"
+)
+goto checkInstall64
+
+:install64
+echo.
+echo [STEP 4] Registering 64-bit virtual camera...
+echo [INFO] Running: regsvr32 /i /s "%DLL64%" >> "%LOG_FILE%"
+
+regsvr32.exe /i /s "%DLL64%"
+
+reg query "HKLM\SOFTWARE\Classes\CLSID\{A3FCE0F5-3493-419F-958A-ABA1250EC20B}" >nul 2>&1
+if %errorLevel% == 0 (
+    echo [OK] 64-bit Virtual Cam successfully installed
+    echo [OK] 64-bit installed >> "%LOG_FILE%"
+) else (
+    echo [ERROR] 64-bit Virtual Cam installation failed!
+    echo [ERROR] 64-bit failed >> "%LOG_FILE%"
     echo.
-    echo [STEP 2] Registering 32-bit virtual camera...
-    regsvr32 /s "%SOFTCAM_DLL_X86%"
-    if %errorLevel% neq 0 (
-        echo [WARNING] 32-bit registration may have failed
-    ) else (
-        echo [OK] 32-bit virtual camera registered
-    )
+    echo Trying with visible dialog...
+    regsvr32.exe /i "%DLL64%"
 )
 
+:checkInstall64
+reg query "HKLM\SOFTWARE\Classes\WOW6432Node\CLSID\{A3FCE0F5-3493-419F-958A-ABA1250EC20B}" >nul 2>&1
+if %errorLevel% neq 0 (
+    goto install32
+)
+
+:endSuccess
 echo.
 echo ========================================
 echo  INSTALLATION COMPLETE!
 echo ========================================
 echo.
-echo The virtual camera "SoftCam" is now available.
+echo Virtual camera "OBS Virtual Camera" is now registered.
 echo.
-echo To use it:
-echo   1. Open RTSP VirtualCam
-echo   2. Connect to your RTSP stream
-echo   3. Click "Virtualize as Webcam"
-echo   4. Select "SoftCam" in your video app
+echo IMPORTANT:
+echo   1. RESTART your video apps (Zoom, Teams, Chrome, etc.)
+echo   2. Look for "OBS Virtual Camera" in camera list
 echo.
-echo To uninstall, run: uninstall-virtualcam.bat
+echo Log saved to: %LOG_FILE%
 echo.
 pause
+exit /b 0
