@@ -54,7 +54,29 @@ public class RtspService : IRtspService, IDisposable
     
     public RtspService()
     {
-        Core.Initialize();
+        // Initialize LibVLC - it will auto-detect libvlc folder
+        try
+        {
+            // For single-file apps, use AppContext.BaseDirectory
+            var exeDir = AppContext.BaseDirectory;
+            var libvlcPath = System.IO.Path.Combine(exeDir, "libvlc", "win-x64");
+            
+            if (System.IO.Directory.Exists(libvlcPath))
+            {
+                Core.Initialize(libvlcPath);
+            }
+            else
+            {
+                // Fallback: let LibVLC find it automatically
+                Core.Initialize();
+            }
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"LibVLC init error: {ex.Message}");
+            // Try default initialization as fallback
+            try { Core.Initialize(); } catch { }
+        }
     }
     
     public async Task<bool> ConnectAsync(string rtspUrl, CancellationToken ct = default)
