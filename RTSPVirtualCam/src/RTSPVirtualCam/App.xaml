@@ -1,0 +1,10 @@
+﻿<Application x:Class="RTSPVirtualCam.App"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:helpers="clr-namespace:RTSPVirtualCam.Helpers">
+    <Application.Resources>
+        <BooleanToVisibilityConverter x:Key="BoolToVisibility"/>
+        <helpers:InverseBooleanToVisibilityConverter x:Key="InverseBoolToVisibility"/>
+        <helpers:CountToVisibilityConverter x:Key="CountToVisibility"/>
+    </Application.Resources>
+</Application>
