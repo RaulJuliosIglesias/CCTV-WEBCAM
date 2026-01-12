@@ -1,0 +1,59 @@
+name: Build and Release
+
+on:
+  push:
+    branches: [ main ]
+    tags: [ 'v*' ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build:
+    runs-on: windows-latest
+    
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+      
+    - name: Setup .NET 8
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: '8.0.x'
+        
+    - name: Restore dependencies
+      run: dotnet restore RTSPVirtualCam/RTSPVirtualCam.sln
+      
+    - name: Build
+      run: dotnet build RTSPVirtualCam/RTSPVirtualCam.sln -c Release --no-restore
+      
+    - name: Publish portable
+      run: |
+        dotnet publish RTSPVirtualCam/src/RTSPVirtualCam `
+          -c Release `
+          -r win-x64 `
+          --self-contained true `
+          -p:PublishSingleFile=true `
+          -o ./publish
+          
+    - name: Upload artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: RTSPVirtualCam-portable-win-x64
+        path: ./publish/RTSPVirtualCam.exe
+        
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/')
+    
+    steps:
+    - name: Download artifact
+      uses: actions/download-artifact@v4
+      with:
+        name: RTSPVirtualCam-portable-win-x64
+        
+    - name: Create Release
+      uses: softprops/action-gh-release@v1
+      with:
+        files: RTSPVirtualCam.exe
+        generate_release_notes: true
