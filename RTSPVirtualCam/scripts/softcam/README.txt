@@ -1,0 +1,1 @@
+Place softcam.dll here. Download from https://github.com/tshino/softcam/releases

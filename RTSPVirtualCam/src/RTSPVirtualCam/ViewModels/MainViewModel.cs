@@ -88,6 +88,19 @@ public partial class MainViewModel : ObservableObject
     [ObservableProperty]
     private string _virtualCameraStatus = string.Empty;
     
+    // Windows 10 SoftCam driver
+    [ObservableProperty]
+    private bool _useWindows10Mode;
+    
+    [ObservableProperty]
+    private bool _isSoftCamInstalled;
+    
+    [ObservableProperty]
+    private string _driverStatus = "Not installed";
+    
+    [ObservableProperty]
+    private bool _isInstallingDriver;
+    
     // Collections
     public ObservableCollection<CameraBrand> Brands { get; } = new(Enum.GetValues<CameraBrand>());
     public ObservableCollection<StreamType> Streams { get; } = new(Enum.GetValues<StreamType>());
@@ -140,14 +153,143 @@ public partial class MainViewModel : ObservableObject
         if (IsWindows11OrLater)
         {
             VirtualCameraStatus = "✅ Windows 11 detected - Native virtual camera supported";
-            AddLog("Windows 11+ detected - Virtual camera API available");
+            AddLog("Windows 11+ detected - Native API available");
+            UseWindows10Mode = false;
         }
         else
         {
-            VirtualCameraStatus = "⚠️ Windows 10 - Virtual camera requires OBS Virtual Camera";
-            AddLog("Windows 10 detected - Native virtual camera NOT available");
-            AddLog("Tip: Install OBS Studio for virtual camera support on Windows 10");
+            VirtualCameraStatus = "⚠️ Windows 10 - SoftCam driver required";
+            AddLog("Windows 10 detected - Enabling Legacy Mode (SoftCam)");
+            UseWindows10Mode = true;
+            CheckSoftCamStatus();
         }
+    }
+    
+    private void CheckSoftCamStatus()
+    {
+        // Check if SoftCam is registered by looking for the DLL
+        // Ideally we would check registry, but file existence + user intent is a good proxy for now
+        // A better check would be trying to use DirectShow to find the filter
+        
+        // For now, checks if user has run the script
+        // In a real scenario we would check HKLM\SOFTWARE\Classes\CLSID\{GUID}
+        
+        // Let's assume 'Not installed' until proven otherwise, but we persist state across sessions if possible
+        // For this demo, we'll just check if the DLL exists in the expected location
+        
+        var dllPath = System.IO.Path.Combine(AppContext.BaseDirectory, "scripts", "softcam", "softcam.dll");
+        var exists = System.IO.File.Exists(dllPath);
+        
+        if (!exists)
+        {
+            DriverStatus = "❌ DLL missing";
+            IsSoftCamInstalled = false;
+        }
+        else
+        {
+            // We can't easily know if it's registered without P/Invoke, assume user knows
+            // Or we could check registry keys for SoftCam CLSID
+            DriverStatus = "Ready to install/uninstall";
+            IsSoftCamInstalled = false; // Defalt to allow install
+        }
+    }
+
+    [RelayCommand]
+    private async Task InstallDriverAsync()
+    {
+        IsInstallingDriver = true;
+        AddLog("Starting SoftCam installation...");
+        
+        try
+        {
+            var scriptPath = System.IO.Path.Combine(AppContext.BaseDirectory, "scripts", "install-virtualcam.bat");
+            if (!System.IO.File.Exists(scriptPath)) 
+            {
+                AddLog($"❌ Script not found: {scriptPath}");
+                IsInstallingDriver = false;
+                return;
+            }
+            
+            await RunAdminScriptAsync(scriptPath);
+            IsSoftCamInstalled = true;
+            DriverStatus = "✅ Driver installed (Restart apps to see 'SoftCam')";
+            AddLog("✅ Driver installation completed");
+            AddLog("💡 You may need to restart video apps (Zoom, Teams) to see 'SoftCam'");
+        }
+        catch (Exception ex)
+        {
+            AddLog($"❌ Install error: {ex.Message}");
+            DriverStatus = "❌ Installation failed";
+        }
+        finally
+        {
+            IsInstallingDriver = false;
+        }
+    }
+    
+    [RelayCommand]
+    private async Task UninstallDriverAsync()
+    {
+        IsInstallingDriver = true;
+        AddLog("Removing SoftCam driver...");
+        
+        try
+        {
+            var scriptPath = System.IO.Path.Combine(AppContext.BaseDirectory, "scripts", "uninstall-virtualcam.bat");
+            if (!System.IO.File.Exists(scriptPath)) 
+            {
+                AddLog($"❌ Script not found: {scriptPath}");
+                return;
+            }
+            
+            await RunAdminScriptAsync(scriptPath);
+            IsSoftCamInstalled = false;
+            DriverStatus = "✅ Driver removed";
+            AddLog("✅ Driver successfully removed");
+        }
+        catch (Exception ex)
+        {
+            AddLog($"❌ Uninstall error: {ex.Message}");
+        }
+        finally
+        {
+            IsInstallingDriver = false;
+        }
+    }
+    
+    private Task RunAdminScriptAsync(string scriptPath)
+    {
+        var tcs = new TaskCompletionSource();
+        
+        try
+        {
+            var startInfo = new System.Diagnostics.ProcessStartInfo
+            {
+                FileName = scriptPath,
+                UseShellExecute = true,
+                Verb = "runas", // Request Admin
+                CreateNoWindow = false // Let user see the script output
+            };
+            
+            var process = System.Diagnostics.Process.Start(startInfo);
+            
+            if (process != null)
+            {
+                process.EnableRaisingEvents = true;
+                process.Exited += (s, e) => tcs.SetResult();
+                return tcs.Task;
+            }
+            else
+            {
+                tcs.SetException(new Exception("Failed to start process"));
+            }
+        }
+        catch (Exception ex)
+        {
+            tcs.SetException(ex);
+        }
+        
+        return tcs.Task;
     }
     
     private void UpdateGeneratedUrl()
