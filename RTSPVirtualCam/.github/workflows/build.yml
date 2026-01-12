@@ -1,59 +1,122 @@
-name: Build and Release
+name: 🚀 Build and Release
 
 on:
   push:
-    branches: [ main ]
+    branches: [ main, master ]
     tags: [ 'v*' ]
   pull_request:
-    branches: [ main ]
+    branches: [ main, master ]
+  workflow_dispatch:  # Manual trigger
+
+env:
+  DOTNET_VERSION: '8.0.x'
+  PROJECT_PATH: 'RTSPVirtualCam/src/RTSPVirtualCam'
+  SOLUTION_PATH: 'RTSPVirtualCam/RTSPVirtualCam.sln'
 
 jobs:
+  # ============================================
+  # BUILD JOB
+  # ============================================
   build:
+    name: 🔨 Build
     runs-on: windows-latest
     
     steps:
-    - name: Checkout
+    - name: 📥 Checkout code
       uses: actions/checkout@v4
       
-    - name: Setup .NET 8
+    - name: 🔧 Setup .NET ${{ env.DOTNET_VERSION }}
       uses: actions/setup-dotnet@v4
       with:
-        dotnet-version: '8.0.x'
+        dotnet-version: ${{ env.DOTNET_VERSION }}
         
-    - name: Restore dependencies
-      run: dotnet restore RTSPVirtualCam/RTSPVirtualCam.sln
+    - name: 📦 Restore dependencies
+      run: dotnet restore ${{ env.SOLUTION_PATH }}
       
-    - name: Build
-      run: dotnet build RTSPVirtualCam/RTSPVirtualCam.sln -c Release --no-restore
+    - name: 🔨 Build
+      run: dotnet build ${{ env.SOLUTION_PATH }} -c Release --no-restore
       
-    - name: Publish portable
+    - name: 📤 Publish portable (win-x64)
       run: |
-        dotnet publish RTSPVirtualCam/src/RTSPVirtualCam `
+        dotnet publish ${{ env.PROJECT_PATH }} `
           -c Release `
           -r win-x64 `
           --self-contained true `
           -p:PublishSingleFile=true `
-          -o ./publish
+          -p:IncludeNativeLibrariesForSelfExtract=true `
+          -o ./artifact
           
-    - name: Upload artifact
+    - name: 📁 Create release folder structure
+      run: |
+        mkdir release-package
+        Copy-Item ./artifact/* ./release-package/ -Recurse
+        Copy-Item RTSPVirtualCam/README.md ./release-package/
+        Copy-Item RTSPVirtualCam/LICENSE ./release-package/
+        
+    - name: 📦 Create ZIP package
+      run: |
+        Compress-Archive -Path ./release-package/* -DestinationPath ./RTSPVirtualCam-portable-win-x64.zip
+        
+    - name: 📤 Upload build artifact
       uses: actions/upload-artifact@v4
       with:
         name: RTSPVirtualCam-portable-win-x64
-        path: ./publish/RTSPVirtualCam.exe
-        
+        path: ./RTSPVirtualCam-portable-win-x64.zip
+        retention-days: 30
+
+  # ============================================
+  # RELEASE JOB (only on tags)
+  # ============================================
   release:
+    name: 🎉 Create Release
     needs: build
     runs-on: ubuntu-latest
-    if: startsWith(github.ref, 'refs/tags/')
+    if: startsWith(github.ref, 'refs/tags/v')
+    permissions:
+      contents: write
     
     steps:
-    - name: Download artifact
+    - name: 📥 Download artifact
       uses: actions/download-artifact@v4
       with:
         name: RTSPVirtualCam-portable-win-x64
+        path: ./release-files
         
-    - name: Create Release
-      uses: softprops/action-gh-release@v1
+    - name: 📋 Get version from tag
+      id: get_version
+      run: echo "VERSION=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
+      
+    - name: 🎉 Create GitHub Release
+      uses: softprops/action-gh-release@v2
       with:
-        files: RTSPVirtualCam.exe
+        name: RTSP VirtualCam ${{ steps.get_version.outputs.VERSION }}
+        body: |
+          ## 🎥 RTSP VirtualCam ${{ steps.get_version.outputs.VERSION }}
+          
+          ### 📥 Downloads
+          
+          | File | Description |
+          |------|-------------|
+          | `RTSPVirtualCam-portable-win-x64.zip` | Portable version (Windows x64) |
+          
+          ### 📋 Requirements
+          - Windows 11 (Build 22000+)
+          - No installation required - just extract and run!
+          
+          ### 🚀 Quick Start
+          1. Download the ZIP file below
+          2. Extract to any folder
+          3. Run `RTSPVirtualCam.exe`
+          4. Enter your RTSP URL and click "Virtualize"
+          
+          ### 📝 What's New
+          - See [CHANGELOG.md](./CHANGELOG.md) for details
+          
+          ---
+          
+          **Full Changelog**: https://github.com/${{ github.repository }}/compare/...
+        files: |
+          ./release-files/RTSPVirtualCam-portable-win-x64.zip
         generate_release_notes: true
+        draft: false
+        prerelease: false

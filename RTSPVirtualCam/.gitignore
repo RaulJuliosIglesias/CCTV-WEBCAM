@@ -1,4 +1,6 @@
-# Git ignore for RTSP VirtualCam
+# ============================================
+# Git Ignore - RTSP VirtualCam
+# ============================================
 
 # Build results
 [Bb]in/
@@ -6,6 +8,11 @@
 [Ll]og/
 [Ll]ogs/
 publish/
+publish-temp/
+package-temp/
+
+# Do NOT ignore releases folder (contains downloadable ZIPs)
+!releases/
 
 # User-specific files
 *.user
@@ -16,25 +23,56 @@ publish/
 # Visual Studio
 .vs/
 *.rsuser
+launchSettings.json
 
 # Rider
 .idea/
 
+# VS Code
+.vscode/
+
 # NuGet
 packages/
 *.nupkg
+project.lock.json
+project.fragment.lock.json
 
 # Windows
 Thumbs.db
 ehthumbs.db
 Desktop.ini
+$RECYCLE.BIN/
+
+# Mac
+.DS_Store
+.AppleDouble
+.LSOverride
 
 # Logs
 *.log
-logs/
 
-# Native libraries cache
+# Native libraries cache (VLC)
 libvlc/
 
 # Test results
 TestResults/
+*.trx
+
+# Code coverage
+coverage/
+*.coverage
+*.coveragexml
+
+# Resharper
+_ReSharper*/
+*.DotSettings.user
+
+# NCrunch
+*.ncrunchproject
+*.ncrunchsolution
+_NCrunch_*
+
+# Temp files
+*.tmp
+*.temp
+~$*
