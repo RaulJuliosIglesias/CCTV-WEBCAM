@@ -642,34 +642,35 @@
                                                 Style="{StaticResource PTZButton}" 
                                                 Margin="6,0,0,0"/>
                                     </Grid>
-                                    
-                                    <!-- Presets -->
-                                    <TextBlock Text="📍 PRESETS" FontSize="9" Foreground="#6C7086" FontWeight="Bold" Margin="0,8,0,8"/>
-                                    
-                                    <Border Background="#252536" CornerRadius="4" Padding="8" MaxHeight="120">
-                                        <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
-                                            <ItemsControl ItemsSource="{Binding PtzPresets}">
-                                                <ItemsControl.ItemsPanel>
-                                                    <ItemsPanelTemplate>
-                                                        <UniformGrid Columns="5" HorizontalAlignment="Stretch"/>
-                                                    </ItemsPanelTemplate>
-                                                </ItemsControl.ItemsPanel>
-                                                <ItemsControl.ItemTemplate>
-                                                    <DataTemplate>
-                                                        <Button Content="{Binding Id}" 
-                                                                Command="{Binding DataContext.GotoPresetCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
-                                                                CommandParameter="{Binding}"
-                                                                Style="{StaticResource PTZButton}"
-                                                                Margin="3"
-                                                                FontSize="12"
-                                                                Padding="10,6"
-                                                                ToolTip="{Binding Name}"/>
-                                                    </DataTemplate>
-                                                </ItemsControl.ItemTemplate>
-                                            </ItemsControl>
-                                        </ScrollViewer>
-                                    </Border>
                                 </StackPanel>
+                            </Expander>
+                            
+                            <!-- SUB-EXPANDER 3: PTZ Presets -->
+                            <Expander Style="{StaticResource SectionExpander}" IsExpanded="False" Margin="0,0,0,0">
+                                <Expander.Header>
+                                    <TextBlock Text="📍 PTZ PRESETS" Foreground="#CBA6F7" FontWeight="SemiBold" FontSize="10"/>
+                                </Expander.Header>
+                                <Border Background="#252536" CornerRadius="4" Padding="12">
+                                    <ItemsControl ItemsSource="{Binding PtzPresets}">
+                                        <ItemsControl.ItemsPanel>
+                                            <ItemsPanelTemplate>
+                                                <UniformGrid Columns="5" HorizontalAlignment="Stretch"/>
+                                            </ItemsPanelTemplate>
+                                        </ItemsControl.ItemsPanel>
+                                        <ItemsControl.ItemTemplate>
+                                            <DataTemplate>
+                                                <Button Content="{Binding Id}" 
+                                                        Command="{Binding DataContext.GotoPresetCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                                                        CommandParameter="{Binding}"
+                                                        Style="{StaticResource PTZButton}"
+                                                        Margin="4"
+                                                        FontSize="14"
+                                                        Padding="12,8"
+                                                        ToolTip="{Binding Name}"/>
+                                            </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                    </ItemsControl>
+                                </Border>
                             </Expander>
                         </StackPanel>
                     </Expander>
