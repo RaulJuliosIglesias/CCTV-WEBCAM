@@ -314,7 +314,7 @@ RTSPVirtualCam/
 
 ## 🗺️ Roadmap
 
-### ✅ v1.0 - MVP (Current)
+### ✅ v1.0 - Current Release
 - [x] RTSP stream connection via LibVLC
 - [x] Live preview in application with real-time stats
 - [x] Virtual camera service (Windows 11 native + OBS fallback)
@@ -326,22 +326,29 @@ RTSPVirtualCam/
 - [x] Portable deployment with auto-updater
 - [x] Bilingual documentation (English/Spanish)
 
-### 🔄 v1.1 - Enhanced
-- [ ] Multiple simultaneous camera connections
-- [ ] Advanced PTZ presets and tours
-- [ ] Stream recording and snapshot capabilities
-- [ ] Audio streaming support
-- [ ] Network bandwidth optimization
-- [ ] Hardware acceleration (DXVA2)
-- [ ] Installer with Windows service option
+### 🔄 v2.0 - Multi-Camera Platform (Next Major)
+- [ ] **Multiple simultaneous camera connections** with independent controls
+- [ ] **Advanced PTZ management** with presets, tours, and synchronized movements
+- [ ] **Stream recording and snapshot capabilities** with scheduled recording
+- [ ] **Audio streaming support** for synchronized audio-video
+- [ ] **Hardware acceleration (DXVA2)** for improved performance
+- [ ] **Network bandwidth optimization** with adaptive bitrate
+- [ ] **Cloud configuration sync** for settings across devices
+- [ ] **Mobile companion app** for remote camera control
+- [ ] **Advanced analytics** with motion detection and alerts
+- [ ] **RTMP streaming support** for platforms like YouTube/Twitch
 
-### 🔄 v1.2 - Advanced
-- [ ] Mobile app companion
-- [ ] Cloud configuration sync
-- [ ] AI-powered camera auto-discovery
-- [ ] Advanced analytics and motion detection
-- [ ] RTMP streaming support
-- [ ] Multi-platform support (macOS, Linux)
+### 🔮 v3.0 - Enterprise & AI Features (Future)
+- [ ] **AI-powered camera auto-discovery** and configuration
+- [ ] **Multi-platform support** (macOS, Linux)
+- [ ] **Enterprise management console** for bulk camera deployment
+- [ ] **Advanced security features** with encryption and authentication
+- [ ] **API and SDK** for third-party integrations
+- [ ] **Web-based interface** for remote management
+- [ ] **Advanced video processing** with AI enhancement and filters
+- [ ] **IoT device integration** for smart home/security systems
+- [ ] **Scalable architecture** supporting hundreds of cameras
+- [ ] **Professional broadcasting features** with NDI support
 
 ---
 

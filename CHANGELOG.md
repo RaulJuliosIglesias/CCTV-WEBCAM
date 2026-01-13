@@ -35,15 +35,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-### Planned for v1.1.0
-- [ ] Full MFCreateVirtualCamera implementation
-- [ ] Settings persistence (JSON)
-- [ ] Auto-reconnect on connection loss
-- [ ] System tray support
-- [ ] Dark mode theme
+### Planned for v2.0.0 - Multi-Camera Platform
+- [ ] Multiple simultaneous camera connections with independent controls
+- [ ] Advanced PTZ management with presets, tours, and synchronized movements
+- [ ] Stream recording and snapshot capabilities with scheduled recording
+- [ ] Audio streaming support for synchronized audio-video
+- [ ] Hardware acceleration (DXVA2) for improved performance
+- [ ] Network bandwidth optimization with adaptive bitrate
+- [ ] Cloud configuration sync for settings across devices
+- [ ] Mobile companion app for remote camera control
+- [ ] Advanced analytics with motion detection and alerts
+- [ ] RTMP streaming support for platforms like YouTube/Twitch
 
-### Planned for v1.2.0
-- [ ] Multiple simultaneous cameras
-- [ ] PTZ control integration
-- [ ] Hardware acceleration (DXVA2)
-- [ ] Windows 10 support (DirectShow fallback)
+### Planned for v3.0.0 - Enterprise & AI Features
+- [ ] AI-powered camera auto-discovery and configuration
+- [ ] Multi-platform support (macOS, Linux)
+- [ ] Enterprise management console for bulk camera deployment
+- [ ] Advanced security features with encryption and authentication
+- [ ] API and SDK for third-party integrations
+- [ ] Web-based interface for remote management
+- [ ] Advanced video processing with AI enhancement and filters
+- [ ] IoT device integration for smart home/security systems
+- [ ] Scalable architecture supporting hundreds of cameras
+- [ ] Professional broadcasting features with NDI support

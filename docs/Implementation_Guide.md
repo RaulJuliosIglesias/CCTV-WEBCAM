@@ -38,6 +38,39 @@
 
 ## 🚀 Paso 1: Crear la Estructura del Proyecto
 
+### Arquitectura Base (v1.0)
+La aplicación sigue una arquitectura MVVM limpia con servicios desacoplados:
+
+```
+RTSPVirtualCam/
+├── 📂 Models/          # Datos y configuración
+├── 📂 Services/        # Lógica de negocio (RTSP, Virtual Camera, PTZ)
+├── 📂 ViewModels/      # MVVM ViewModels
+├── 📂 Views/           # UI WPF
+├── 📂 Core/            # Funcionalidad central
+└── 📂 Helpers/        # Utilidades
+```
+
+### Evolución Arquitectónica
+
+**v1.0 (Actual)**: Arquitectura monolítica con servicios desacoplados
+- RTSP Service → Virtual Camera Service → UI
+- Soporte para cámara única
+- PTZ básico para Hikvision
+
+**v2.0 (Planeada)**: Arquitectura multi-servicio
+- Camera Manager Service (gestiona múltiples cámaras)
+- Recording Service (grabación y snapshots)
+- Analytics Service (detección de movimiento)
+- Cloud Sync Service (sincronización)
+- Mobile API Service (comunicación con app móvil)
+
+**v3.0 (Futura)**: Arquitectura microservicios
+- API Gateway para comunicación entre componentes
+- Servicios desplegables independientemente
+- Soporte para clúster y escalabilidad horizontal
+- Web UI separada de la aplicación desktop
+
 ### Comando inicial:
 ```bash
 mkdir RTSPVirtualCam

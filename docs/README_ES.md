@@ -266,7 +266,7 @@ RTSPVirtualCam/
 
 ## 🗺️ Hoja de Ruta
 
-### ✅ v1.0 - MVP (Actual)
+### ✅ v1.0 - Versión Actual
 - [x] Conexión stream RTSP via LibVLC
 - [x] Vista previa en aplicación con estadísticas en tiempo real
 - [x] Servicio cámara virtual (Windows 11 nativo + OBS fallback)
@@ -278,22 +278,29 @@ RTSPVirtualCam/
 - [x] Despliegue portable con auto-updater
 - [x] Documentación bilingüe (Inglés/Español)
 
-### 🔄 v1.1 - Mejorada
-- [ ] Múltiples conexiones simultáneas de cámara
-- [ ] Presets PTZ avanzados y tours
-- [ ] Grabación de stream y capturas de pantalla
-- [ ] Soporte para streaming de audio
-- [ ] Optimización de ancho de banda de red
-- [ ] Aceleración por hardware (DXVA2)
-- [ ] Instalador con opción de servicio Windows
+### 🔄 v2.0 - Plataforma Multi-Cámara (Siguiente Major)
+- [ ] **Múltiples conexiones simultáneas de cámara** con controles independientes
+- [ ] **Gestión PTZ avanzada** con presets, tours y movimientos sincronizados
+- [ ] **Grabación de stream y capturas** con grabación programada
+- [ ] **Soporte streaming de audio** para audio-video sincronizado
+- [ ] **Aceleración por hardware (DXVA2)** para rendimiento mejorado
+- [ ] **Optimización de ancho de banda** con bitrate adaptativo
+- [ ] **Sincronización de configuración en la nube** para ajustes entre dispositivos
+- [ ] **App móvil companion** para control remoto de cámaras
+- [ ] **Analíticas avanzadas** con detección de movimiento y alertas
+- [ ] **Soporte streaming RTMP** para plataformas como YouTube/Twitch
 
-### 🔮 v1.2 - Avanzada
-- [ ] Aplicación móvil companion
-- [ ] Sincronización de configuración en la nube
-- [ ] Descubrimiento automático de cámaras con IA
-- [ ] Analíticas avanzadas y detección de movimiento
-- [ ] Soporte streaming RTMP
-- [ ] Soporte multi-plataforma (macOS, Linux)
+### 🔮 v3.0 - Características Enterprise & IA (Futuro)
+- [ ] **Descubrimiento automático de cámaras con IA** y configuración
+- [ ] **Soporte multi-plataforma** (macOS, Linux)
+- [ ] **Consola de gestión enterprise** para despliegue masivo de cámaras
+- [ ] **Características de seguridad avanzadas** con encriptación y autenticación
+- [ ] **API y SDK** para integraciones de terceros
+- [ ] **Interfaz web-based** para gestión remota
+- [ ] **Procesamiento de video avanzado** con mejora IA y filtros
+- [ ] **Integración de dispositivos IoT** para sistemas de hogar/seguridad inteligentes
+- [ ] **Arquitectura escalable** soportando cientos de cámaras
+- [ ] **Características de broadcasting profesional** con soporte NDI
 
 ---
 

@@ -276,18 +276,29 @@ Log.Logger = new LoggerConfiguration()
 
 ## 🔮 Future Development
 
-### 🔄 v1.1 - Enhanced
-- **Multiple Cameras**: Soporte para conexiones simultáneas
-- **Advanced PTZ**: Presets, tours y control mejorado
-- **Recording**: Grabación de streams y snapshots
-- **Audio Support**: Streaming de audio integrado
-- **Hardware Acceleration**: DXVA2 para procesamiento de video
-- **Network Optimization**: Adaptive bitrate y buffering
+### 🔄 v2.0 - Multi-Camera Platform (Next Major)
+- **Multiple Cameras**: Soporte para conexiones simultáneas con controles independientes
+- **Advanced PTZ**: Presets, tours y gestión sincronizada de movimientos
+- **Recording**: Grabación programada y capturas con almacenamiento en la nube
+- **Audio Support**: Streaming de audio sincronizado con video
+- **Hardware Acceleration**: DXVA2 para procesamiento de video mejorado
+- **Network Optimization**: Bitrate adaptativo y optimización de ancho de banda
+- **Cloud Sync**: Sincronización de configuraciones entre dispositivos
+- **Mobile Companion**: App móvil para control remoto de cámaras
+- **Analytics**: Detección de movimiento y alertas inteligentes
+- **RTMP Support**: Streaming a plataformas como YouTube/Twitch
 
-### Technical Improvements
-- **Hardware Acceleration**: DXVA2 for video processing
-- **Better Error Handling**: Retry mechanisms and fallbacks
-- **Performance Optimization**: Memory management and threading
+### 🔮 v3.0 - Enterprise & AI Features (Future)
+- **AI Discovery**: Descubrimiento automático de cámaras con IA
+- **Multi-Platform**: Soporte macOS y Linux
+- **Enterprise Console**: Gestión masiva de despliegue de cámaras
+- **Advanced Security**: Encriptación y autenticación mejorada
+- **API & SDK**: Integraciones de terceros
+- **Web Interface**: Gestión remota vía web
+- **AI Processing**: Mejora de video con IA y filtros avanzados
+- **IoT Integration**: Integración con sistemas de hogar inteligente
+- **Scalable Architecture**: Soporte para cientos de cámaras
+- **Professional Broadcasting**: Soporte NDI para broadcasting profesional
 
 ---
 
