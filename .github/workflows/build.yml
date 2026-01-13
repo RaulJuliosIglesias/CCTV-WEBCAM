@@ -6,12 +6,17 @@ on:
     tags: [ 'v*' ]
   pull_request:
     branches: [ main, master ]
-  workflow_dispatch:  # Manual trigger
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version number (e.g., 1.2.3)'
+        required: false
+        default: 'auto'
 
 env:
   DOTNET_VERSION: '8.0.x'
-  PROJECT_PATH: 'RTSPVirtualCam/src/RTSPVirtualCam'
-  SOLUTION_PATH: 'RTSPVirtualCam/RTSPVirtualCam.sln'
+  PROJECT_PATH: 'src/RTSPVirtualCam'
+  SOLUTION_PATH: 'RTSPVirtualCam.sln'
 
 jobs:
   # ============================================
@@ -36,32 +41,94 @@ jobs:
     - name: 🔨 Build
       run: dotnet build ${{ env.SOLUTION_PATH }} -c Release --no-restore
       
+    - name: 📋 Get version
+      id: version
+      shell: pwsh
+      run: |
+        if ("${{ github.ref }}" -match '^refs/tags/v(.*)') {
+          $version = $Matches[1]
+        } elseif ("${{ github.event.inputs.version }}" -ne "" -and "${{ github.event.inputs.version }}" -ne "auto") {
+          $version = "${{ github.event.inputs.version }}"
+        } else {
+          $version = "0.0.0-dev.${{ github.run_number }}"
+        }
+        echo "VERSION=$version" >> $env:GITHUB_OUTPUT
+        echo "Version: $version"
+    
     - name: 📤 Publish portable (win-x64)
       run: |
         dotnet publish ${{ env.PROJECT_PATH }} `
           -c Release `
           -r win-x64 `
           --self-contained true `
-          -p:PublishSingleFile=true `
-          -p:IncludeNativeLibrariesForSelfExtract=true `
+          -p:PublishSingleFile=false `
+          -p:Version=${{ steps.version.outputs.VERSION }} `
           -o ./artifact
           
     - name: 📁 Create release folder structure
+      shell: pwsh
       run: |
-        mkdir release-package
-        Copy-Item ./artifact/* ./release-package/ -Recurse
-        Copy-Item RTSPVirtualCam/README.md ./release-package/
-        Copy-Item RTSPVirtualCam/LICENSE ./release-package/
+        $packageName = "RTSPVirtualCam-v${{ steps.version.outputs.VERSION }}-portable-win-x64"
+        New-Item -ItemType Directory -Path $packageName -Force | Out-Null
+        
+        # Copy binaries
+        Copy-Item ./artifact/* $packageName/ -Recurse
+        
+        # Copy documentation
+        Copy-Item README.md $packageName/ -ErrorAction SilentlyContinue
+        Copy-Item LICENSE $packageName/ -ErrorAction SilentlyContinue
+        Copy-Item CHANGELOG.md $packageName/ -ErrorAction SilentlyContinue
+        
+        # Create QUICKSTART guide
+        @"
+        # RTSP VirtualCam v${{ steps.version.outputs.VERSION }} - Quick Start
+        
+        ## Installation
+        1. Extract all files to a folder
+        2. Run RTSPVirtualCam.exe
+        
+        ## Usage
+        1. Enter your RTSP URL (e.g., rtsp://user:pass@192.168.1.100:554/stream)
+        2. Click "Preview" to test the connection
+        3. Click "Virtualize" to create the virtual camera
+        4. Select "RTSP VirtualCam" in your video conferencing app
+        
+        ## Requirements
+        - Windows 11 (Build 22000+)
+        - .NET 8 Runtime (included)
+        
+        ## Support
+        - GitHub: https://github.com/${{ github.repository }}
+        - Issues: https://github.com/${{ github.repository }}/issues
+        "@ | Out-File -FilePath "$packageName/QUICKSTART.txt" -Encoding UTF8
+        
+        echo "PACKAGE_NAME=$packageName" >> $env:GITHUB_ENV
         
     - name: 📦 Create ZIP package
+      shell: pwsh
       run: |
-        Compress-Archive -Path ./release-package/* -DestinationPath ./RTSPVirtualCam-portable-win-x64.zip
+        $zipName = "${{ env.PACKAGE_NAME }}.zip"
+        Compress-Archive -Path "${{ env.PACKAGE_NAME }}/*" -DestinationPath $zipName -CompressionLevel Optimal
+        
+        # Generate checksums
+        $hash = (Get-FileHash $zipName -Algorithm SHA256).Hash
+        "$hash  $zipName" | Out-File -FilePath "$zipName.sha256" -Encoding ASCII
+        
+        echo "ZIP_NAME=$zipName" >> $env:GITHUB_ENV
+        
+        # Display info
+        $size = [math]::Round((Get-Item $zipName).Length / 1MB, 2)
+        Write-Host "Package: $zipName"
+        Write-Host "Size: $size MB"
+        Write-Host "SHA256: $hash"
         
     - name: 📤 Upload build artifact
       uses: actions/upload-artifact@v4
       with:
-        name: RTSPVirtualCam-portable-win-x64
-        path: ./RTSPVirtualCam-portable-win-x64.zip
+        name: ${{ env.PACKAGE_NAME }}
+        path: |
+          ${{ env.ZIP_NAME }}
+          ${{ env.ZIP_NAME }}.sha256
         retention-days: 30
 
   # ============================================
@@ -71,52 +138,110 @@ jobs:
     name: 🎉 Create Release
     needs: build
     runs-on: ubuntu-latest
-    if: startsWith(github.ref, 'refs/tags/v')
+    if: startsWith(github.ref, 'refs/tags/v') || github.event_name == 'workflow_dispatch'
     permissions:
       contents: write
     
     steps:
-    - name: 📥 Download artifact
+    - name: 📥 Checkout (for CHANGELOG)
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+        
+    - name: 📥 Download artifacts
       uses: actions/download-artifact@v4
       with:
-        name: RTSPVirtualCam-portable-win-x64
+        pattern: RTSPVirtualCam-*
         path: ./release-files
+        merge-multiple: true
         
-    - name: 📋 Get version from tag
-      id: get_version
-      run: echo "VERSION=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
+    - name: 📋 Get version
+      id: version
+      shell: bash
+      run: |
+        if [[ "${{ github.ref }}" =~ ^refs/tags/v(.*)$ ]]; then
+          VERSION="${BASH_REMATCH[1]}"
+        elif [[ -n "${{ github.event.inputs.version }}" && "${{ github.event.inputs.version }}" != "auto" ]]; then
+          VERSION="${{ github.event.inputs.version }}"
+        else
+          VERSION="0.0.0-dev.${{ github.run_number }}"
+        fi
+        echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
+        echo "TAG=v$VERSION" >> $GITHUB_OUTPUT
+        
+    - name: 📝 Extract changelog
+      id: changelog
+      shell: bash
+      run: |
+        if [ -f CHANGELOG.md ]; then
+          # Extract section for this version
+          CHANGES=$(awk '/^## \[?'"${{ steps.version.outputs.VERSION }}"'\]?/,/^## \[?[0-9]/' CHANGELOG.md | sed '$d' | tail -n +2)
+          if [ -z "$CHANGES" ]; then
+            CHANGES="See CHANGELOG.md for details"
+          fi
+        else
+          CHANGES="Initial release"
+        fi
+        echo "CHANGES<<EOF" >> $GITHUB_OUTPUT
+        echo "$CHANGES" >> $GITHUB_OUTPUT
+        echo "EOF" >> $GITHUB_OUTPUT
       
     - name: 🎉 Create GitHub Release
       uses: softprops/action-gh-release@v2
       with:
-        name: RTSP VirtualCam ${{ steps.get_version.outputs.VERSION }}
+        tag_name: ${{ steps.version.outputs.TAG }}
+        name: RTSP VirtualCam v${{ steps.version.outputs.VERSION }}
         body: |
-          ## 🎥 RTSP VirtualCam ${{ steps.get_version.outputs.VERSION }}
+          ## 🎥 RTSP VirtualCam v${{ steps.version.outputs.VERSION }}
+          
+          Transform any RTSP camera stream into a virtual webcam for Windows 11.
           
           ### 📥 Downloads
           
-          | File | Description |
-          |------|-------------|
-          | `RTSPVirtualCam-portable-win-x64.zip` | Portable version (Windows x64) |
+          | File | Size | SHA256 |
+          |------|------|--------|
+          | `RTSPVirtualCam-v${{ steps.version.outputs.VERSION }}-portable-win-x64.zip` | Check below | Included |
+          
+          **Checksum file**: `RTSPVirtualCam-v${{ steps.version.outputs.VERSION }}-portable-win-x64.zip.sha256`
           
           ### 📋 Requirements
-          - Windows 11 (Build 22000+)
-          - No installation required - just extract and run!
+          - **OS**: Windows 11 (Build 22000+)
+          - **Runtime**: Included (self-contained)
+          - **Installation**: None required - just extract and run!
           
           ### 🚀 Quick Start
           1. Download the ZIP file below
-          2. Extract to any folder
+          2. Extract to any folder  
           3. Run `RTSPVirtualCam.exe`
-          4. Enter your RTSP URL and click "Virtualize"
+          4. Enter your RTSP URL (e.g., `rtsp://user:pass@192.168.1.100:554/stream`)
+          5. Click "Preview" to test, then "Virtualize"
+          6. Select "RTSP VirtualCam" in your video app (Teams, Zoom, etc.)
           
           ### 📝 What's New
-          - See [CHANGELOG.md](./CHANGELOG.md) for details
+          
+          ${{ steps.changelog.outputs.CHANGES }}
+          
+          ### 🔒 Security
+          
+          Verify download integrity:
+          ```powershell
+          # PowerShell
+          (Get-FileHash RTSPVirtualCam-v${{ steps.version.outputs.VERSION }}-portable-win-x64.zip -Algorithm SHA256).Hash -eq (Get-Content RTSPVirtualCam-v${{ steps.version.outputs.VERSION }}-portable-win-x64.zip.sha256).Split()[0]
+          ```
+          
+          ### 📚 Documentation
+          
+          - [User Guide](https://github.com/${{ github.repository }}/blob/main/docs/USER_GUIDE.md)
+          - [Troubleshooting](https://github.com/${{ github.repository }}/blob/main/docs/TROUBLESHOOTING.md)
+          - [Full Documentation](https://github.com/${{ github.repository }}/tree/main/docs)
           
           ---
           
-          **Full Changelog**: https://github.com/${{ github.repository }}/compare/...
+          **Full Changelog**: https://github.com/${{ github.repository }}/blob/main/CHANGELOG.md
         files: |
-          ./release-files/RTSPVirtualCam-portable-win-x64.zip
+          ./release-files/*.zip
+          ./release-files/*.sha256
         generate_release_notes: true
         draft: false
-        prerelease: false
+        prerelease: ${{ contains(steps.version.outputs.VERSION, 'dev') || contains(steps.version.outputs.VERSION, 'beta') || contains(steps.version.outputs.VERSION, 'alpha') }}
+        make_latest: ${{ !contains(steps.version.outputs.VERSION, 'dev') }}

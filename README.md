@@ -7,6 +7,8 @@
 [![.NET 8](https://img.shields.io/badge/.NET-8.0-512BD4?style=for-the-badge&logo=dotnet)](https://dotnet.microsoft.com/)
 [![Windows 11](https://img.shields.io/badge/Windows-11-0078D4?style=for-the-badge&logo=windows11)](https://www.microsoft.com/windows)
 [![License](https://img.shields.io/badge/License-Proprietary-red?style=for-the-badge)](LICENSE)
+[![GitHub release](https://img.shields.io/github/v/release/YOUR_USERNAME/RTSPVirtualCam?style=for-the-badge)](../../releases/latest)
+[![GitHub downloads](https://img.shields.io/github/downloads/YOUR_USERNAME/RTSPVirtualCam/total?style=for-the-badge)](../../releases)
 
 <p align="center">
   <strong>🇬🇧 English</strong> | <a href="docs/README_ES.md">🇪🇸 Español</a>
@@ -66,17 +68,28 @@
 
 ### Option 1: Download Portable Version (Recommended)
 
-1. Download the latest release from [Releases](../../releases)
-2. Extract `RTSPVirtualCam-portable.zip`
+**📥 [Download Latest Release](../../releases/latest)**
+
+1. Download `RTSPVirtualCam-vX.X.X-portable-win-x64.zip` from [Releases](../../releases)
+2. Extract to any folder
 3. Run `RTSPVirtualCam.exe`
 4. No installation required!
 
+**Verify Download Integrity:**
+```powershell
+# Check SHA256 checksum
+(Get-FileHash RTSPVirtualCam-v1.0.0-portable-win-x64.zip -Algorithm SHA256).Hash -eq `
+  (Get-Content RTSPVirtualCam-v1.0.0-portable-win-x64.zip.sha256).Split()[0]
+```
+
 ### Option 2: Build from Source
+
+> **Note:** This repository may be private. For development access, contact the maintainer.
 
 ```powershell
 # Clone the repository
-git clone https://github.com/YOUR_USERNAME/CCTV-WEBCAM.git
-cd CCTV-WEBCAM/RTSPVirtualCam
+git clone https://github.com/YOUR_USERNAME/RTSPVirtualCam.git
+cd RTSPVirtualCam
 
 # Restore and build
 dotnet restore
@@ -84,7 +97,12 @@ dotnet build
 
 # Run
 dotnet run --project src/RTSPVirtualCam
+
+# Build portable release
+.\scripts\create-release.ps1 -Version "1.0.0"
 ```
+
+**For Contributors:** See [DEVELOPMENT.md](docs/DEVELOPMENT.md) for detailed development guide.
 
 ---
 
@@ -251,6 +269,19 @@ RTSPVirtualCam/
 └── src/RTSPVirtualCam/bin/Debug/net8.0-windows/win-x64/
     └── RTSPVirtualCam.exe
 ```
+
+---
+
+## 📚 Documentation
+
+| Document | Description |
+|----------|-------------|
+| [USER_GUIDE.md](docs/USER_GUIDE.md) | Complete user manual |
+| [TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md) | Common issues and solutions |
+| [DEPLOYMENT.md](docs/DEPLOYMENT.md) | Release and deployment guide |
+| [DEVELOPMENT.md](docs/DEVELOPMENT.md) | Developer setup guide |
+| [GITHUB_SETUP.md](docs/GITHUB_SETUP.md) | GitHub repository configuration |
+| [README_ES.md](docs/README_ES.md) | Documentación en Español |
 
 ---
 
