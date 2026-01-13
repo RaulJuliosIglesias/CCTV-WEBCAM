@@ -159,6 +159,144 @@
             <Setter Property="FontWeight" Value="Medium"/>
             <Setter Property="Margin" Value="0,0,0,4"/>
         </Style>
+        
+        <!-- Collapsible Section Style -->
+        <Style x:Key="SectionExpander" TargetType="Expander">
+            <Setter Property="Background" Value="#1E1E2E"/>
+            <Setter Property="Foreground" Value="#CDD6F4"/>
+            <Setter Property="BorderBrush" Value="#313244"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="Margin" Value="0,0,0,10"/>
+            <Setter Property="Padding" Value="0"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Expander">
+                        <Border Background="{TemplateBinding Background}" 
+                                BorderBrush="{TemplateBinding BorderBrush}" 
+                                BorderThickness="{TemplateBinding BorderThickness}" 
+                                CornerRadius="8">
+                            <StackPanel>
+                                <ToggleButton x:Name="HeaderSite" 
+                                              IsChecked="{Binding IsExpanded, Mode=TwoWay, RelativeSource={RelativeSource TemplatedParent}}"
+                                              Background="#252536" 
+                                              BorderThickness="0"
+                                              Padding="12,10"
+                                              HorizontalContentAlignment="Stretch"
+                                              Cursor="Hand">
+                                    <ToggleButton.Template>
+                                        <ControlTemplate TargetType="ToggleButton">
+                                            <Border Background="{TemplateBinding Background}" CornerRadius="8,8,0,0" Padding="{TemplateBinding Padding}">
+                                                <Grid>
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="*"/>
+                                                        <ColumnDefinition Width="Auto"/>
+                                                    </Grid.ColumnDefinitions>
+                                                    <ContentPresenter Grid.Column="0" VerticalAlignment="Center"/>
+                                                    <TextBlock Grid.Column="1" x:Name="Arrow" Text="▼" Foreground="#6C7086" FontSize="10" VerticalAlignment="Center"/>
+                                                </Grid>
+                                            </Border>
+                                            <ControlTemplate.Triggers>
+                                                <Trigger Property="IsChecked" Value="True">
+                                                    <Setter TargetName="Arrow" Property="Text" Value="▲"/>
+                                                </Trigger>
+                                            </ControlTemplate.Triggers>
+                                        </ControlTemplate>
+                                    </ToggleButton.Template>
+                                    <ContentPresenter Content="{TemplateBinding Header}" ContentTemplate="{TemplateBinding HeaderTemplate}"/>
+                                </ToggleButton>
+                                <Border x:Name="ExpandSite" Visibility="Collapsed" Padding="12,10">
+                                    <ContentPresenter/>
+                                </Border>
+                            </StackPanel>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsExpanded" Value="True">
+                                <Setter TargetName="ExpandSite" Property="Visibility" Value="Visible"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+        
+        <!-- PTZ Button Style -->
+        <Style x:Key="PTZButton" TargetType="Button">
+            <Setter Property="Background" Value="#313244"/>
+            <Setter Property="Foreground" Value="#CDD6F4"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Padding" Value="15,12"/>
+            <Setter Property="FontSize" Value="16"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border Background="{TemplateBinding Background}" CornerRadius="6" Padding="{TemplateBinding Padding}">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter Property="Background" Value="#45475A"/>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter Property="Background" Value="#89B4FA"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+        
+        <!-- Control Button Style -->
+        <Style x:Key="ControlButton" TargetType="Button">
+            <Setter Property="Background" Value="#313244"/>
+            <Setter Property="Foreground" Value="#CDD6F4"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Padding" Value="12,8"/>
+            <Setter Property="FontSize" Value="12"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="border" Background="{TemplateBinding Background}" CornerRadius="4" Padding="{TemplateBinding Padding}">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="border" Property="Background" Value="#45475A"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+        
+        <!-- Toggle Button Style for Flip -->
+        <Style x:Key="ToggleControlButton" TargetType="ToggleButton">
+            <Setter Property="Background" Value="#313244"/>
+            <Setter Property="Foreground" Value="#CDD6F4"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Padding" Value="12,8"/>
+            <Setter Property="FontSize" Value="12"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ToggleButton">
+                        <Border x:Name="border" Background="{TemplateBinding Background}" CornerRadius="4" Padding="{TemplateBinding Padding}">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="border" Property="Background" Value="#45475A"/>
+                            </Trigger>
+                            <Trigger Property="IsChecked" Value="True">
+                                <Setter TargetName="border" Property="Background" Value="#89B4FA"/>
+                                <Setter Property="Foreground" Value="#1E1E2E"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
     </Window.Resources>
     
     <Grid>
@@ -168,211 +306,205 @@
         </Grid.ColumnDefinitions>
         
         <!-- Left Panel - Controls -->
-        <Border Grid.Column="0" Background="#181825" Padding="20">
+        <Border Grid.Column="0" Background="#181825" Padding="12">
             <ScrollViewer VerticalScrollBarVisibility="Auto">
                 <StackPanel>
                     <!-- Header -->
-                    <TextBlock Text="🎥 RTSP VirtualCam" 
-                               FontSize="22" FontWeight="Bold" 
-                               Foreground="#CDD6F4" Margin="0,0,0,5"/>
-                    <TextBlock Text="Transform RTSP streams into webcams" 
-                               FontSize="11" Foreground="#6C7086" Margin="0,0,0,20"/>
+                    <TextBlock Text="🎥 RTSP VirtualCam" FontSize="18" FontWeight="Bold" Foreground="#CDD6F4" Margin="0,0,0,2"/>
+                    <TextBlock Text="CCTV to Webcam Converter" FontSize="10" Foreground="#6C7086" Margin="0,0,0,12"/>
                     
-                    <!-- Camera Brand -->
-                    <TextBlock Text="CAMERA BRAND" Style="{StaticResource LabelStyle}"/>
-                    <ComboBox ItemsSource="{Binding Brands}" 
-                              SelectedItem="{Binding SelectedBrand}"
-                              Style="{StaticResource ModernComboBox}"
-                              Margin="0,0,0,15"/>
-                    
-                    <!-- Connection Settings -->
-                    <TextBlock Text="CONNECTION" Style="{StaticResource LabelStyle}" Margin="0,10,0,4"/>
-                    
-                    <Grid Margin="0,0,0,10">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="*"/>
-                            <ColumnDefinition Width="80"/>
-                        </Grid.ColumnDefinitions>
-                        
-                        <StackPanel Grid.Column="0" Margin="0,0,10,0">
-                            <TextBlock Text="IP Address" FontSize="10" Foreground="#6C7086" Margin="0,0,0,2"/>
-                            <TextBox Text="{Binding IpAddress, UpdateSourceTrigger=PropertyChanged}" 
-                                     Style="{StaticResource ModernTextBox}"/>
-                        </StackPanel>
-                        
-                        <StackPanel Grid.Column="1">
-                            <TextBlock Text="Port" FontSize="10" Foreground="#6C7086" Margin="0,0,0,2"/>
-                            <TextBox Text="{Binding Port, UpdateSourceTrigger=PropertyChanged}" 
-                                     Style="{StaticResource ModernTextBox}"/>
-                        </StackPanel>
-                    </Grid>
-                    
-                    <Grid Margin="0,0,0,10">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="*"/>
-                            <ColumnDefinition Width="*"/>
-                        </Grid.ColumnDefinitions>
-                        
-                        <StackPanel Grid.Column="0" Margin="0,0,5,0">
-                            <TextBlock Text="Username" FontSize="10" Foreground="#6C7086" Margin="0,0,0,2"/>
-                            <TextBox Text="{Binding Username, UpdateSourceTrigger=PropertyChanged}" 
-                                     Style="{StaticResource ModernTextBox}"/>
-                        </StackPanel>
-                        
-                        <StackPanel Grid.Column="1" Margin="5,0,0,0">
-                            <TextBlock Text="Password" FontSize="10" Foreground="#6C7086" Margin="0,0,0,2"/>
-                            <TextBox Text="{Binding Password, UpdateSourceTrigger=PropertyChanged}" 
-                                     Style="{StaticResource ModernTextBox}"/>
-                        </StackPanel>
-                    </Grid>
-                    
-                    <!-- Stream Settings -->
-                    <TextBlock Text="STREAM SETTINGS" Style="{StaticResource LabelStyle}" Margin="0,15,0,4"/>
-                    
-                    <Grid Margin="0,0,0,10">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="*"/>
-                            <ColumnDefinition Width="80"/>
-                        </Grid.ColumnDefinitions>
-                        
-                        <StackPanel Grid.Column="0" Margin="0,0,10,0">
-                            <TextBlock Text="Stream Type" FontSize="10" Foreground="#6C7086" Margin="0,0,0,2"/>
-                            <ComboBox ItemsSource="{Binding Streams}" 
-                                      SelectedItem="{Binding SelectedStream}"
-                                      Style="{StaticResource ModernComboBox}"/>
-                        </StackPanel>
-                        
-                        <StackPanel Grid.Column="1">
-                            <TextBlock Text="Channel" FontSize="10" Foreground="#6C7086" Margin="0,0,0,2"/>
-                            <ComboBox ItemsSource="{Binding Channels}" 
-                                      SelectedItem="{Binding Channel}"
-                                      Style="{StaticResource ModernComboBox}"/>
-                        </StackPanel>
-                    </Grid>
-                    
-                    <!-- Generated URL -->
-                    <TextBlock Text="GENERATED URL" Style="{StaticResource LabelStyle}" Margin="0,15,0,4"/>
-                    <Border Background="#313244" CornerRadius="6" Padding="12" Margin="0,0,0,8">
-                        <Grid>
-                            <TextBox Text="{Binding GeneratedUrl}" 
-                                     Foreground="#A6E3A1" 
-                                     Background="Transparent"
-                                     BorderThickness="0"
-                                     IsReadOnly="True"
-                                     FontFamily="Consolas"
-                                     FontSize="11"
-                                     TextWrapping="Wrap"/>
-                        </Grid>
-                    </Border>
-                    
-                    <StackPanel Orientation="Horizontal" Margin="0,0,0,15">
-                        <Button Content="📋 Copy" Command="{Binding CopyUrlCommand}" 
-                                Style="{StaticResource SecondaryButton}" 
-                                Padding="12,8" FontSize="11" Margin="0,0,8,0"/>
-                        <Button Content="▶ VLC Test" Command="{Binding TestInVlcCommand}" 
-                                Style="{StaticResource SecondaryButton}" 
-                                Padding="12,8" FontSize="11"/>
-                    </StackPanel>
-                    
-                    <!-- Manual URL Toggle -->
-                    <CheckBox Content="Use manual URL" 
-                              IsChecked="{Binding UseManualUrl}"
-                              Foreground="#BAC2DE" 
-                              Margin="0,0,0,5"/>
-                    
-                    <TextBox Text="{Binding ManualUrl, UpdateSourceTrigger=PropertyChanged}" 
-                             Style="{StaticResource ModernTextBox}"
-                             Visibility="{Binding UseManualUrl, Converter={StaticResource BoolToVisibility}}"
-                             Margin="0,0,0,15"/>
-                    
-                    <!-- Action Buttons -->
-                    <Button Content="▶  Preview Stream" 
-                            Command="{Binding PreviewCommand}"
-                            Style="{StaticResource PrimaryButton}"
-                            Margin="0,0,0,8"/>
-                    
-                    <Button Content="📹  Virtualize as Webcam" 
-                            Command="{Binding VirtualizeCommand}"
-                            Style="{StaticResource SuccessButton}"
-                            Margin="0,0,0,8"/>
-                    
-                    <Button Content="⏹  Stop All" 
-                            Command="{Binding StopCommand}"
-                            Style="{StaticResource DangerButton}"
-                            Margin="0,0,0,15"/>
-                    
-                    <!-- Windows Version Status -->
-                    <Border Background="#313244" CornerRadius="6" Padding="12">
+                    <!-- ═══════════════════════════════════════ -->
+                    <!-- SECTION 1: CAMERA SETUP (Collapsible) -->
+                    <!-- ═══════════════════════════════════════ -->
+                    <Expander Style="{StaticResource SectionExpander}" IsExpanded="False">
+                        <Expander.Header>
+                            <TextBlock Text="📷 CAMERA SETUP" Foreground="#F9E2AF" FontWeight="SemiBold" FontSize="11"/>
+                        </Expander.Header>
                         <StackPanel>
-                            <TextBlock Text="{Binding VirtualCameraStatus}" 
-                                       Foreground="#F9E2AF"
-                                       FontSize="11"
-                                       TextWrapping="Wrap"
-                                       Margin="0,0,0,5"/>
-                            <TextBlock Text="Preview works on all Windows versions" 
-                                       Foreground="#6C7086"
-                                       FontSize="10"/>
-                        </StackPanel>
-                    </Border>
-                    
-                    <!-- Windows 10 Virtual Camera Driver Panel -->
-                    <Border Background="#313244" CornerRadius="6" Padding="12" Margin="0,15,0,0"
-                            Visibility="{Binding UseWindows10Mode, Converter={StaticResource BoolToVisibility}}">
-                        <StackPanel>
-                            <TextBlock Text="🪟 WINDOWS 10 - VIRTUAL CAMERA" 
-                                       Foreground="#F9E2AF"
-                                       FontSize="11"
-                                       FontWeight="Bold"
-                                       Margin="0,0,0,8"/>
+                            <TextBlock Text="Brand" Style="{StaticResource LabelStyle}"/>
+                            <ComboBox ItemsSource="{Binding Brands}" SelectedItem="{Binding SelectedBrand}" Style="{StaticResource ModernComboBox}" Margin="0,0,0,10"/>
                             
-                            <TextBlock Text="{Binding DriverStatus}" 
-                                       Foreground="#A6E3A1"
-                                       FontSize="10"
-                                       TextWrapping="Wrap"
-                                       Margin="0,0,0,8"/>
-                            
-                            <!-- Install/Uninstall Buttons -->
-                            <Grid>
+                            <Grid Margin="0,0,0,8">
                                 <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="*"/>
-                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="*"/><ColumnDefinition Width="70"/>
                                 </Grid.ColumnDefinitions>
-                                
-                                <Button Grid.Column="0" 
-                                        Content="🔧 Install" 
-                                        Command="{Binding InstallDriverCommand}"
-                                        Style="{StaticResource SuccessButton}"
-                                        IsEnabled="{Binding IsInstallingDriver, Converter={StaticResource InverseBooleanConverter}}"
-                                        Padding="10,8"
-                                        FontSize="11"
-                                        Margin="0,0,4,0"/>
-                                
-                                <Button Grid.Column="1" 
-                                        Content="🗑️ Uninstall" 
-                                        Command="{Binding UninstallDriverCommand}"
-                                        Style="{StaticResource DangerButton}"
-                                        IsEnabled="{Binding IsInstallingDriver, Converter={StaticResource InverseBooleanConverter}}"
-                                        Padding="10,8"
-                                        FontSize="11"
-                                        Margin="4,0,0,0"/>
+                                <StackPanel Grid.Column="0" Margin="0,0,8,0">
+                                    <TextBlock Text="IP Address" FontSize="9" Foreground="#6C7086" Margin="0,0,0,2"/>
+                                    <TextBox Text="{Binding IpAddress, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource ModernTextBox}"/>
+                                </StackPanel>
+                                <StackPanel Grid.Column="1">
+                                    <TextBlock Text="Port" FontSize="9" Foreground="#6C7086" Margin="0,0,0,2"/>
+                                    <TextBox Text="{Binding Port, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource ModernTextBox}"/>
+                                </StackPanel>
                             </Grid>
                             
-                            <!-- Installing Indicator -->
-                            <StackPanel Orientation="Horizontal" 
-                                        Visibility="{Binding IsInstallingDriver, Converter={StaticResource BoolToVisibility}}"
-                                        Margin="0,8,0,0">
-                                <TextBlock Text="⏳" FontSize="12" Margin="0,0,5,0" VerticalAlignment="Center"/>
-                                <TextBlock Text="Installing driver..." 
-                                           Foreground="#F9E2AF"
-                                           FontSize="10"
-                                           VerticalAlignment="Center"/>
+                            <Grid Margin="0,0,0,8">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/><ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <StackPanel Grid.Column="0" Margin="0,0,4,0">
+                                    <TextBlock Text="Username" FontSize="9" Foreground="#6C7086" Margin="0,0,0,2"/>
+                                    <TextBox Text="{Binding Username, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource ModernTextBox}"/>
+                                </StackPanel>
+                                <StackPanel Grid.Column="1" Margin="4,0,0,0">
+                                    <TextBlock Text="Password" FontSize="9" Foreground="#6C7086" Margin="0,0,0,2"/>
+                                    <TextBox Text="{Binding Password, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource ModernTextBox}"/>
+                                </StackPanel>
+                            </Grid>
+                            
+                            <Grid Margin="0,0,0,8">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/><ColumnDefinition Width="70"/>
+                                </Grid.ColumnDefinitions>
+                                <StackPanel Grid.Column="0" Margin="0,0,8,0">
+                                    <TextBlock Text="Stream" FontSize="9" Foreground="#6C7086" Margin="0,0,0,2"/>
+                                    <ComboBox ItemsSource="{Binding Streams}" SelectedItem="{Binding SelectedStream}" Style="{StaticResource ModernComboBox}"/>
+                                </StackPanel>
+                                <StackPanel Grid.Column="1">
+                                    <TextBlock Text="Channel" FontSize="9" Foreground="#6C7086" Margin="0,0,0,2"/>
+                                    <ComboBox ItemsSource="{Binding Channels}" SelectedItem="{Binding Channel}" Style="{StaticResource ModernComboBox}"/>
+                                </StackPanel>
+                            </Grid>
+                            
+                            <TextBlock Text="URL" FontSize="9" Foreground="#6C7086" Margin="0,8,0,2"/>
+                            <Border Background="#252536" CornerRadius="4" Padding="8" Margin="0,0,0,8">
+                                <TextBox Text="{Binding GeneratedUrl}" Foreground="#A6E3A1" Background="Transparent" BorderThickness="0" IsReadOnly="True" FontFamily="Consolas" FontSize="9" TextWrapping="Wrap"/>
+                            </Border>
+                            
+                            <StackPanel Orientation="Horizontal">
+                                <Button Content="📋 Copy" Command="{Binding CopyUrlCommand}" Style="{StaticResource ControlButton}" Margin="0,0,5,0"/>
+                                <Button Content="▶ VLC" Command="{Binding TestInVlcCommand}" Style="{StaticResource ControlButton}"/>
                             </StackPanel>
                             
-                            <TextBlock Text="ℹ️ OBS Virtual Camera - Works with Chrome/Zoom/Teams" 
-                                       Foreground="#6C7086"
-                                       FontSize="9"
-                                       TextWrapping="Wrap"
-                                       Margin="0,8,0,0"/>
+                            <CheckBox Content="Use manual URL" IsChecked="{Binding UseManualUrl}" Foreground="#6C7086" FontSize="10" Margin="0,10,0,0"/>
+                            <TextBox Text="{Binding ManualUrl, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource ModernTextBox}" Visibility="{Binding UseManualUrl, Converter={StaticResource BoolToVisibility}}" Margin="0,5,0,0"/>
+                        </StackPanel>
+                    </Expander>
+                    
+                    <!-- ═══════════════════════════════════════ -->
+                    <!-- SECTION 2: DRIVER STATUS -->
+                    <!-- ═══════════════════════════════════════ -->
+                    <Expander Style="{StaticResource SectionExpander}" IsExpanded="False" Visibility="{Binding UseWindows10Mode, Converter={StaticResource BoolToVisibility}}">
+                        <Expander.Header>
+                            <TextBlock Text="🪟 VIRTUAL CAMERA DRIVER" Foreground="#A6E3A1" FontWeight="SemiBold" FontSize="11"/>
+                        </Expander.Header>
+                        <StackPanel>
+                            <TextBlock Text="{Binding DriverStatus}" Foreground="#A6E3A1" FontSize="10" TextWrapping="Wrap" Margin="0,0,0,10"/>
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/><ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <Button Grid.Column="0" Content="🔧 Install" Command="{Binding InstallDriverCommand}" Style="{StaticResource SuccessButton}" IsEnabled="{Binding IsInstallingDriver, Converter={StaticResource InverseBooleanConverter}}" Padding="8,6" FontSize="10" Margin="0,0,4,0"/>
+                                <Button Grid.Column="1" Content="🗑️ Uninstall" Command="{Binding UninstallDriverCommand}" Style="{StaticResource DangerButton}" IsEnabled="{Binding IsInstallingDriver, Converter={StaticResource InverseBooleanConverter}}" Padding="8,6" FontSize="10" Margin="4,0,0,0"/>
+                            </Grid>
+                            <StackPanel Orientation="Horizontal" Visibility="{Binding IsInstallingDriver, Converter={StaticResource BoolToVisibility}}" Margin="0,8,0,0">
+                                <TextBlock Text="⏳ Installing..." Foreground="#F9E2AF" FontSize="10"/>
+                            </StackPanel>
+                        </StackPanel>
+                    </Expander>
+                    
+                    <!-- ═══════════════════════════════════════ -->
+                    <!-- SECTION 3: CAMERA CONTROLS -->
+                    <!-- ═══════════════════════════════════════ -->
+                    <Expander Style="{StaticResource SectionExpander}" IsExpanded="True">
+                        <Expander.Header>
+                            <TextBlock Text="🎮 CAMERA CONTROLS" Foreground="#89B4FA" FontWeight="SemiBold" FontSize="11"/>
+                        </Expander.Header>
+                        <StackPanel>
+                            <!-- Preview Controls -->
+                            <TextBlock Text="📺 PREVIEW CONTROLS" FontSize="9" Foreground="#6C7086" FontWeight="Bold" Margin="0,0,0,8"/>
+                            
+                            <Grid Margin="0,0,0,10">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/><ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <ToggleButton Grid.Column="0" Content="↔️ Flip H" IsChecked="{Binding PreviewFlipHorizontal}" Style="{StaticResource ToggleControlButton}" Margin="0,0,4,0"/>
+                                <ToggleButton Grid.Column="1" Content="↕️ Flip V" IsChecked="{Binding PreviewFlipVertical}" Style="{StaticResource ToggleControlButton}" Margin="4,0,0,0"/>
+                            </Grid>
+                            
+                            <StackPanel Margin="0,0,0,8">
+                                <Grid>
+                                    <TextBlock Text="☀️ Brightness" FontSize="10" Foreground="#A6ADC8"/>
+                                    <TextBlock Text="{Binding PreviewBrightness}" FontSize="10" Foreground="#89B4FA" HorizontalAlignment="Right"/>
+                                </Grid>
+                                <Slider Minimum="-100" Maximum="100" Value="{Binding PreviewBrightness}" Margin="0,4,0,0"/>
+                            </StackPanel>
+                            
+                            <StackPanel Margin="0,0,0,15">
+                                <Grid>
+                                    <TextBlock Text="🎨 Contrast" FontSize="10" Foreground="#A6ADC8"/>
+                                    <TextBlock Text="{Binding PreviewContrast}" FontSize="10" Foreground="#89B4FA" HorizontalAlignment="Right"/>
+                                </Grid>
+                                <Slider Minimum="-100" Maximum="100" Value="{Binding PreviewContrast}" Margin="0,4,0,0"/>
+                            </StackPanel>
+                            
+                            <!-- Virtual Camera Controls -->
+                            <TextBlock Text="📹 VIRTUAL CAMERA OUTPUT" FontSize="9" Foreground="#6C7086" FontWeight="Bold" Margin="0,0,0,8"/>
+                            
+                            <Grid Margin="0,0,0,10">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/><ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <ToggleButton Grid.Column="0" Content="↔️ Flip H" IsChecked="{Binding VirtualFlipHorizontal}" Style="{StaticResource ToggleControlButton}" Margin="0,0,4,0"/>
+                                <ToggleButton Grid.Column="1" Content="↕️ Flip V" IsChecked="{Binding VirtualFlipVertical}" Style="{StaticResource ToggleControlButton}" Margin="4,0,0,0"/>
+                            </Grid>
+                            
+                            <StackPanel Margin="0,0,0,8">
+                                <Grid>
+                                    <TextBlock Text="☀️ Brightness" FontSize="10" Foreground="#A6ADC8"/>
+                                    <TextBlock Text="{Binding VirtualBrightness}" FontSize="10" Foreground="#89B4FA" HorizontalAlignment="Right"/>
+                                </Grid>
+                                <Slider Minimum="-100" Maximum="100" Value="{Binding VirtualBrightness}" Margin="0,4,0,0"/>
+                            </StackPanel>
+                            
+                            <StackPanel Margin="0,0,0,15">
+                                <Grid>
+                                    <TextBlock Text="🎨 Contrast" FontSize="10" Foreground="#A6ADC8"/>
+                                    <TextBlock Text="{Binding VirtualContrast}" FontSize="10" Foreground="#89B4FA" HorizontalAlignment="Right"/>
+                                </Grid>
+                                <Slider Minimum="-100" Maximum="100" Value="{Binding VirtualContrast}" Margin="0,4,0,0"/>
+                            </StackPanel>
+                            
+                            <!-- PTZ Controls -->
+                            <TextBlock Text="🎯 PTZ CONTROL" FontSize="9" Foreground="#6C7086" FontWeight="Bold" Margin="0,5,0,8"/>
+                            
+                            <Grid HorizontalAlignment="Center" Margin="0,0,0,10">
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/>
+                                </Grid.RowDefinitions>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                
+                                <Button Grid.Row="0" Grid.Column="1" Content="▲" Command="{Binding PtzUpCommand}" Style="{StaticResource PTZButton}" Margin="2"/>
+                                <Button Grid.Row="1" Grid.Column="0" Content="◀" Command="{Binding PtzLeftCommand}" Style="{StaticResource PTZButton}" Margin="2"/>
+                                <Button Grid.Row="1" Grid.Column="1" Content="⏺" Command="{Binding PtzHomeCommand}" Style="{StaticResource PTZButton}" Margin="2"/>
+                                <Button Grid.Row="1" Grid.Column="2" Content="▶" Command="{Binding PtzRightCommand}" Style="{StaticResource PTZButton}" Margin="2"/>
+                                <Button Grid.Row="2" Grid.Column="1" Content="▼" Command="{Binding PtzDownCommand}" Style="{StaticResource PTZButton}" Margin="2"/>
+                            </Grid>
+                            
+                            <Grid Margin="0,0,0,5">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/><ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <Button Grid.Column="0" Content="🔍−" Command="{Binding PtzZoomOutCommand}" Style="{StaticResource ControlButton}" Margin="0,0,4,0"/>
+                                <Button Grid.Column="1" Content="🔍+" Command="{Binding PtzZoomInCommand}" Style="{StaticResource ControlButton}" Margin="4,0,0,0"/>
+                            </Grid>
+                        </StackPanel>
+                    </Expander>
+                    
+                                        
+                    <!-- ═══════════════════════════════════════ -->
+                    <!-- ACTION BUTTONS -->
+                    <!-- ═══════════════════════════════════════ -->
+                    <Button Content="▶  Preview Stream" Command="{Binding PreviewCommand}" Style="{StaticResource PrimaryButton}" Margin="0,5,0,6"/>
+                    <Button Content="📹  Virtualize as Webcam" Command="{Binding VirtualizeCommand}" Style="{StaticResource SuccessButton}" Margin="0,0,0,6"/>
+                    <Button Content="⏹  Stop All" Command="{Binding StopCommand}" Style="{StaticResource DangerButton}" Margin="0,0,0,10"/>
+                    
+                    <!-- Status -->
+                    <Border Background="#252536" CornerRadius="6" Padding="10">
+                        <StackPanel>
+                            <TextBlock Text="{Binding VirtualCameraStatus}" Foreground="#F9E2AF" FontSize="10" TextWrapping="Wrap"/>
                         </StackPanel>
                     </Border>
                 </StackPanel>

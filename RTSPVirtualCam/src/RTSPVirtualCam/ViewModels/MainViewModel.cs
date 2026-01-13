@@ -103,18 +103,31 @@ public partial class MainViewModel : ObservableObject
     [ObservableProperty]
     private bool _isInstallingDriver;
     
-    // Camera settings
+    // Camera settings - Preview
     [ObservableProperty]
-    private bool _flipHorizontal;
+    private bool _previewFlipHorizontal;
     
     [ObservableProperty]
-    private bool _flipVertical;
+    private bool _previewFlipVertical;
     
     [ObservableProperty]
-    private int _brightness;
+    private int _previewBrightness;
     
     [ObservableProperty]
-    private int _contrast;
+    private int _previewContrast;
+    
+    // Camera settings - Virtual Camera Output
+    [ObservableProperty]
+    private bool _virtualFlipHorizontal;
+    
+    [ObservableProperty]
+    private bool _virtualFlipVertical;
+    
+    [ObservableProperty]
+    private int _virtualBrightness;
+    
+    [ObservableProperty]
+    private int _virtualContrast;
     
     // Preview bitmap
     [ObservableProperty]
@@ -173,25 +186,52 @@ public partial class MainViewModel : ObservableObject
         catch { }
     }
     
-    partial void OnFlipHorizontalChanged(bool value)
+    // Preview controls
+    partial void OnPreviewFlipHorizontalChanged(bool value)
     {
         if (_rtspService is RtspService rtspSvc)
             rtspSvc.FlipHorizontal = value;
     }
     
-    partial void OnFlipVerticalChanged(bool value)
+    partial void OnPreviewFlipVerticalChanged(bool value)
     {
         if (_rtspService is RtspService rtspSvc)
             rtspSvc.FlipVertical = value;
     }
     
-    partial void OnBrightnessChanged(int value)
+    partial void OnPreviewBrightnessChanged(int value)
     {
         if (_rtspService is RtspService rtspSvc)
             rtspSvc.Brightness = value;
     }
     
-    partial void OnContrastChanged(int value)
+    partial void OnPreviewContrastChanged(int value)
+    {
+        if (_rtspService is RtspService rtspSvc)
+            rtspSvc.Contrast = value;
+    }
+    
+    // Virtual camera controls - apply correction for horizontal flip
+    partial void OnVirtualFlipHorizontalChanged(bool value)
+    {
+        // Apply inverse flip to correct the virtual camera orientation
+        if (_rtspService is RtspService rtspSvc)
+            rtspSvc.FlipHorizontal = !value; // Invert to fix the flip issue
+    }
+    
+    partial void OnVirtualFlipVerticalChanged(bool value)
+    {
+        if (_rtspService is RtspService rtspSvc)
+            rtspSvc.FlipVertical = value;
+    }
+    
+    partial void OnVirtualBrightnessChanged(int value)
+    {
+        if (_rtspService is RtspService rtspSvc)
+            rtspSvc.Brightness = value;
+    }
+    
+    partial void OnVirtualContrastChanged(int value)
     {
         if (_rtspService is RtspService rtspSvc)
             rtspSvc.Contrast = value;
@@ -807,6 +847,156 @@ public partial class MainViewModel : ObservableObject
         {
             AddLog($"❌ VLC error: {ex.Message}");
         }
+    }
+    
+    // ═══════════════════════════════════════
+    // PTZ CONTROLS
+    // ═══════════════════════════════════════
+    
+    [RelayCommand]
+    private async Task PtzUpAsync() => await SendPtzCommandAsync("up");
+    
+    [RelayCommand]
+    private async Task PtzDownAsync() => await SendPtzCommandAsync("down");
+    
+    [RelayCommand]
+    private async Task PtzLeftAsync() => await SendPtzCommandAsync("left");
+    
+    [RelayCommand]
+    private async Task PtzRightAsync() => await SendPtzCommandAsync("right");
+    
+    [RelayCommand]
+    private async Task PtzHomeAsync() => await SendPtzCommandAsync("home");
+    
+    [RelayCommand]
+    private async Task PtzZoomInAsync() => await SendPtzCommandAsync("zoomin");
+    
+    [RelayCommand]
+    private async Task PtzZoomOutAsync() => await SendPtzCommandAsync("zoomout");
+    
+    private async Task SendPtzCommandAsync(string direction)
+    {
+        try
+        {
+            // Build PTZ API URL based on camera brand
+            string ptzUrl = SelectedBrand switch
+            {
+                CameraBrand.Hikvision => BuildHikvisionPtzUrl(direction),
+                CameraBrand.Dahua => BuildDahuaPtzUrl(direction),
+                _ => BuildGenericOnvifPtzUrl(direction)
+            };
+            
+            if (string.IsNullOrEmpty(ptzUrl))
+            {
+                AddLog($"⚠️ PTZ not supported for {SelectedBrand}");
+                return;
+            }
+            
+            using var client = new System.Net.Http.HttpClient();
+            client.Timeout = TimeSpan.FromSeconds(5);
+            
+            // Add authentication
+            var credentials = Convert.ToBase64String(System.Text.Encoding.ASCII.GetBytes($"{Username}:{Password}"));
+            client.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Basic", credentials);
+            
+            var response = await client.PutAsync(ptzUrl, new System.Net.Http.StringContent(GetPtzXmlPayload(direction), System.Text.Encoding.UTF8, "application/xml"));
+            
+            if (response.IsSuccessStatusCode)
+            {
+                AddLog($"🎮 PTZ: {direction}");
+            }
+            else
+            {
+                AddLog($"⚠️ PTZ failed: {response.StatusCode}");
+            }
+            
+            // Stop movement after short delay (continuous mode)
+            await Task.Delay(300);
+            await StopPtzMovementAsync();
+        }
+        catch (Exception ex)
+        {
+            AddLog($"⚠️ PTZ error: {ex.Message}");
+        }
+    }
+    
+    private async Task StopPtzMovementAsync()
+    {
+        try
+        {
+            string stopUrl = SelectedBrand switch
+            {
+                CameraBrand.Hikvision => $"http://{IpAddress}/ISAPI/PTZCtrl/channels/1/continuous",
+                CameraBrand.Dahua => $"http://{IpAddress}/cgi-bin/ptz.cgi?action=stop&channel=0",
+                _ => null
+            };
+            
+            if (stopUrl == null) return;
+            
+            using var client = new System.Net.Http.HttpClient();
+            client.Timeout = TimeSpan.FromSeconds(3);
+            var credentials = Convert.ToBase64String(System.Text.Encoding.ASCII.GetBytes($"{Username}:{Password}"));
+            client.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Basic", credentials);
+            
+            if (SelectedBrand == CameraBrand.Hikvision)
+            {
+                await client.PutAsync(stopUrl, new System.Net.Http.StringContent(
+                    "<PTZData><pan>0</pan><tilt>0</tilt><zoom>0</zoom></PTZData>",
+                    System.Text.Encoding.UTF8, "application/xml"));
+            }
+            else
+            {
+                await client.GetAsync(stopUrl);
+            }
+        }
+        catch { }
+    }
+    
+    private string BuildHikvisionPtzUrl(string direction)
+    {
+        return direction == "home" 
+            ? $"http://{IpAddress}/ISAPI/PTZCtrl/channels/1/homeposition/goto"
+            : $"http://{IpAddress}/ISAPI/PTZCtrl/channels/1/continuous";
+    }
+    
+    private string BuildDahuaPtzUrl(string direction)
+    {
+        string action = direction switch
+        {
+            "up" => "start&code=Up",
+            "down" => "start&code=Down",
+            "left" => "start&code=Left",
+            "right" => "start&code=Right",
+            "zoomin" => "start&code=ZoomTele",
+            "zoomout" => "start&code=ZoomWide",
+            "home" => "start&code=GotoPreset&arg1=0&arg2=1",
+            _ => "stop"
+        };
+        return $"http://{IpAddress}/cgi-bin/ptz.cgi?action={action}&channel=0&arg1=0&arg2=1&arg3=0";
+    }
+    
+    private string? BuildGenericOnvifPtzUrl(string direction)
+    {
+        // Generic ONVIF not implemented - would require SOAP
+        return null;
+    }
+    
+    private string GetPtzXmlPayload(string direction)
+    {
+        int pan = 0, tilt = 0, zoom = 0;
+        int speed = 50;
+        
+        switch (direction)
+        {
+            case "up": tilt = speed; break;
+            case "down": tilt = -speed; break;
+            case "left": pan = -speed; break;
+            case "right": pan = speed; break;
+            case "zoomin": zoom = speed; break;
+            case "zoomout": zoom = -speed; break;
+        }
+        
+        return $"<PTZData><pan>{pan}</pan><tilt>{tilt}</tilt><zoom>{zoom}</zoom></PTZData>";
     }
     
     private void OnConnectionStateChanged(object? sender, RtspConnectionEventArgs e)
