@@ -260,7 +260,7 @@ public partial class MainViewModel : ObservableObject
     private static readonly string LogFilePath = System.IO.Path.Combine(
         AppContext.BaseDirectory, "logs", $"rtspvirtualcam_{DateTime.Now:yyyyMMdd_HHmmss}.log");
     
-    private void AddLog(string message)
+    public void AddLog(string message)
     {
         var timestamp = DateTime.Now.ToString("HH:mm:ss");
         var logEntry = $"[{timestamp}] {message}";
@@ -917,6 +917,33 @@ public partial class MainViewModel : ObservableObject
         });
     }
     
+    // Keyboard PTZ control
+    [RelayCommand]
+    public async Task PtzKeyboardControlAsync(string key)
+    {
+        switch (key)
+        {
+            case "Up":
+                await ExecutePtzCommandAsync("up");
+                break;
+            case "Down":
+                await ExecutePtzCommandAsync("down");
+                break;
+            case "Left":
+                await ExecutePtzCommandAsync("left");
+                break;
+            case "Right":
+                await ExecutePtzCommandAsync("right");
+                break;
+            case "PageUp":
+                await ExecutePtzCommandAsync("zoomin");
+                break;
+            case "PageDown":
+                await ExecutePtzCommandAsync("zoomout");
+                break;
+        }
+    }
+    
     private async Task SendPtzViaHttpAsync(string command)
     {
         try
@@ -924,6 +951,19 @@ public partial class MainViewModel : ObservableObject
             // Use PTZ credentials if provided, otherwise fallback to RTSP credentials
             string ptzUser = string.IsNullOrWhiteSpace(PtzUsername) ? Username : PtzUsername;
             string ptzPass = string.IsNullOrWhiteSpace(PtzPassword) ? Password : PtzPassword;
+            
+            // Validate connection parameters
+            if (string.IsNullOrWhiteSpace(IpAddress))
+            {
+                AddLog("❌ PTZ: Camera IP address is required");
+                return;
+            }
+            
+            if (string.IsNullOrWhiteSpace(ptzUser))
+            {
+                AddLog("❌ PTZ: Username is required for PTZ control");
+                return;
+            }
             
             // Use HttpClientHandler with credentials for Digest authentication
             var handler = new System.Net.Http.HttpClientHandler
@@ -933,7 +973,7 @@ public partial class MainViewModel : ObservableObject
             };
             
             using var client = new System.Net.Http.HttpClient(handler);
-            client.Timeout = TimeSpan.FromSeconds(5);
+            client.Timeout = TimeSpan.FromSeconds(10); // Increased timeout
             
             string url;
             System.Net.Http.HttpContent? content = null;
@@ -960,8 +1000,8 @@ public partial class MainViewModel : ObservableObject
                 {
                     AddLog($"✅ PTZ command sent successfully");
                     
-                    // Auto-stop after 300ms
-                    await Task.Delay(300);
+                    // Auto-stop after 500ms (increased from 300ms for more noticeable movement)
+                    await Task.Delay(500);
                     await StopPtzViaHttpAsync();
                 }
                 else if (response.StatusCode == System.Net.HttpStatusCode.Unauthorized)
@@ -993,6 +1033,12 @@ public partial class MainViewModel : ObservableObject
                     AddLog($"   El usuario tiene login pero NO permisos PTZ");
                     AddLog($"   Verifica permisos en Configuration → User Management");
                 }
+                else if (response.StatusCode == System.Net.HttpStatusCode.NotFound)
+                {
+                    AddLog($"❌ PTZ FAILED: Not Found (404)");
+                    AddLog($"   La cámara no soporta PTZ o la URL es incorrecta");
+                    AddLog($"   Verifica que la cámara sea PTZ y la IP sea correcta");
+                }
                 else
                 {
                     var errorBody = await response.Content.ReadAsStringAsync();
@@ -1022,7 +1068,7 @@ public partial class MainViewModel : ObservableObject
                 if (response.IsSuccessStatusCode)
                 {
                     AddLog($"✅ PTZ command sent");
-                    await Task.Delay(300);
+                    await Task.Delay(500);
                     await client.GetAsync($"http://{IpAddress}/cgi-bin/ptz.cgi?action=stop&channel=0");
                 }
                 else
@@ -1034,7 +1080,12 @@ public partial class MainViewModel : ObservableObject
         catch (System.Net.Http.HttpRequestException ex)
         {
             AddLog($"❌ PTZ connection error: {ex.Message}");
-            AddLog($"💡 Verify camera IP: {IpAddress}");
+            AddLog($"💡 Verify camera IP: {IpAddress} and network connectivity");
+        }
+        catch (TaskCanceledException)
+        {
+            AddLog($"❌ PTZ timeout - camera not responding");
+            AddLog($"💡 Check if camera is powered on and network is stable");
         }
         catch (Exception ex)
         {
@@ -1119,7 +1170,7 @@ public partial class MainViewModel : ObservableObject
     
     private (int pan, int tilt, int zoom) GetPtzValues(string command)
     {
-        int speed = 50; // 0-100
+        int speed = 75; // Increased from 50 to 75 for more responsive movement
         
         return command.ToLower() switch
         {

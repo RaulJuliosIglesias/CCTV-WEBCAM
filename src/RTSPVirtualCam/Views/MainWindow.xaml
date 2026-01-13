@@ -219,27 +219,91 @@
             </Setter>
         </Style>
         
-        <!-- PTZ Button Style -->
+        <!-- Enhanced PTZ Button Style with modern design -->
         <Style x:Key="PTZButton" TargetType="Button">
-            <Setter Property="Background" Value="#313244"/>
+            <Setter Property="Background" Value="#45475A"/>
             <Setter Property="Foreground" Value="#CDD6F4"/>
             <Setter Property="BorderThickness" Value="0"/>
-            <Setter Property="Padding" Value="15,12"/>
-            <Setter Property="FontSize" Value="16"/>
+            <Setter Property="Padding" Value="18,15"/>
+            <Setter Property="FontSize" Value="20"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
             <Setter Property="Cursor" Value="Hand"/>
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
-                        <Border Background="{TemplateBinding Background}" CornerRadius="6" Padding="{TemplateBinding Padding}">
-                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        <Border x:Name="border" 
+                                CornerRadius="12" 
+                                Padding="{TemplateBinding Padding}">
+                            <!-- Shadow effect -->
+                            <Border.Effect>
+                                <DropShadowEffect Color="#000000" 
+                                                  Direction="270" 
+                                                  ShadowDepth="2" 
+                                                  BlurRadius="8" 
+                                                  Opacity="0.3"/>
+                            </Border.Effect>
+                            <!-- Gradient overlay -->
+                            <Border.Background>
+                                <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
+                                    <GradientStop Color="#585B70" Offset="0"/>
+                                    <GradientStop Color="#45475A" Offset="1"/>
+                                </LinearGradientBrush>
+                            </Border.Background>
+                            <ContentPresenter HorizontalAlignment="Center" 
+                                            VerticalAlignment="Center"/>
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter Property="Background" Value="#45475A"/>
+                                <Setter TargetName="border" Property="Background">
+                                    <Setter.Value>
+                                        <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
+                                            <GradientStop Color="#6C7086" Offset="0"/>
+                                            <GradientStop Color="#585B70" Offset="1"/>
+                                        </LinearGradientBrush>
+                                    </Setter.Value>
+                                </Setter>
+                                <Setter TargetName="border" Property="Effect">
+                                    <Setter.Value>
+                                        <DropShadowEffect Color="#89B4FA" 
+                                                          Direction="270" 
+                                                          ShadowDepth="3" 
+                                                          BlurRadius="12" 
+                                                          Opacity="0.4"/>
+                                    </Setter.Value>
+                                </Setter>
                             </Trigger>
                             <Trigger Property="IsPressed" Value="True">
-                                <Setter Property="Background" Value="#89B4FA"/>
+                                <Setter TargetName="border" Property="Background">
+                                    <Setter.Value>
+                                        <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
+                                            <GradientStop Color="#89B4FA" Offset="0"/>
+                                            <GradientStop Color="#74A7F7" Offset="1"/>
+                                        </LinearGradientBrush>
+                                    </Setter.Value>
+                                </Setter>
+                                <Setter Property="Foreground" Value="#1E1E2E"/>
+                                <Setter TargetName="border" Property="Effect">
+                                    <Setter.Value>
+                                        <DropShadowEffect Color="#89B4FA" 
+                                                          Direction="270" 
+                                                          ShadowDepth="4" 
+                                                          BlurRadius="15" 
+                                                          Opacity="0.5"/>
+                                    </Setter.Value>
+                                </Setter>
                             </Trigger>
+                            <EventTrigger RoutedEvent="Click">
+                                <BeginStoryboard>
+                                    <Storyboard>
+                                        <ColorAnimation Storyboard.TargetName="border" 
+                                                      Storyboard.TargetProperty="Background.(LinearGradientBrush.GradientStops)[0].(GradientStop.Color)" 
+                                                      To="#A6E3A1" Duration="0:0:0.15" AutoReverse="True"/>
+                                        <DoubleAnimation Storyboard.TargetName="border" 
+                                                         Storyboard.TargetProperty="Effect.(DropShadowEffect.ShadowDepth)" 
+                                                         To="6" Duration="0:0:0.15" AutoReverse="True"/>
+                                    </Storyboard>
+                                </BeginStoryboard>
+                            </EventTrigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
                 </Setter.Value>
@@ -484,9 +548,10 @@
                             </StackPanel>
                             
                             <!-- PTZ Control -->
-                            <TextBlock Text="🎯 PTZ CONTROL" FontSize="9" Foreground="#6C7086" FontWeight="Bold" Margin="0,0,0,8"/>
+                            <TextBlock Text="🎯 PTZ CONTROL" FontSize="9" Foreground="#6C7086" FontWeight="Bold" Margin="0,0,0,4"/>
+                            <TextBlock Text="💡 Keyboard: Arrow keys + Page Up/Down" FontSize="8" Foreground="#89B4FA" Margin="0,0,0,8"/>
                             
-                            <Grid Margin="0,0,0,8">
+                            <Grid Margin="0,0,0,12">
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="*"/>
                                     <ColumnDefinition Width="*"/>
@@ -499,25 +564,53 @@
                                 </Grid.RowDefinitions>
                                 
                                 <!-- First row: Up -->
-                                <Button Grid.Row="0" Grid.Column="1" Content="▲" Command="{Binding PtzUpCommand}" Style="{StaticResource PTZButton}"/>
+                                <Button Grid.Row="0" Grid.Column="1" 
+                                        Content="▲" 
+                                        Command="{Binding PtzUpCommand}" 
+                                        Style="{StaticResource PTZButton}" 
+                                        Margin="0,0,8,8"/>
                                 
                                 <!-- Second row: Left, Home, Right -->
-                                <Button Grid.Row="1" Grid.Column="0" Content="◀" Command="{Binding PtzLeftCommand}" Style="{StaticResource PTZButton}" Margin="0,0,4,0"/>
-                                <Button Grid.Row="1" Grid.Column="1" Content="⊙" Command="{Binding PtzHomeCommand}" Style="{StaticResource PTZButton}" Margin="4,0,4,0"/>
-                                <Button Grid.Row="1" Grid.Column="2" Content="▶" Command="{Binding PtzRightCommand}" Style="{StaticResource PTZButton}" Margin="4,0,0,0"/>
+                                <Button Grid.Row="1" Grid.Column="0" 
+                                        Content="◀" 
+                                        Command="{Binding PtzLeftCommand}" 
+                                        Style="{StaticResource PTZButton}" 
+                                        Margin="0,0,4,8"/>
+                                <Button Grid.Row="1" Grid.Column="1" 
+                                        Content="⊙" 
+                                        Command="{Binding PtzHomeCommand}" 
+                                        Style="{StaticResource PTZButton}" 
+                                        Margin="4,0,4,8"/>
+                                <Button Grid.Row="1" Grid.Column="2" 
+                                        Content="▶" 
+                                        Command="{Binding PtzRightCommand}" 
+                                        Style="{StaticResource PTZButton}" 
+                                        Margin="4,0,0,8"/>
                                 
                                 <!-- Third row: Down -->
-                                <Button Grid.Row="2" Grid.Column="1" Content="▼" Command="{Binding PtzDownCommand}" Style="{StaticResource PTZButton}"/>
+                                <Button Grid.Row="2" Grid.Column="1" 
+                                        Content="▼" 
+                                        Command="{Binding PtzDownCommand}" 
+                                        Style="{StaticResource PTZButton}" 
+                                        Margin="0,0,8,0"/>
                             </Grid>
                             
-                            <!-- Zoom controls -->
-                            <Grid Margin="0,0,0,8">
+                            <!-- Enhanced Zoom controls -->
+                            <Grid Margin="0,0,0,12">
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="*"/>
                                     <ColumnDefinition Width="*"/>
                                 </Grid.ColumnDefinitions>
-                                <Button Grid.Column="0" Content="🔍 +" Command="{Binding PtzZoomInCommand}" Style="{StaticResource PTZButton}" Margin="0,0,4,0"/>
-                                <Button Grid.Column="1" Content="🔍 -" Command="{Binding PtzZoomOutCommand}" Style="{StaticResource PTZButton}" Margin="4,0,0,0"/>
+                                <Button Grid.Column="0" 
+                                        Content="🔍+" 
+                                        Command="{Binding PtzZoomInCommand}" 
+                                        Style="{StaticResource PTZButton}" 
+                                        Margin="0,0,6,0"/>
+                                <Button Grid.Column="1" 
+                                        Content="🔍-" 
+                                        Command="{Binding PtzZoomOutCommand}" 
+                                        Style="{StaticResource PTZButton}" 
+                                        Margin="6,0,0,0"/>
                             </Grid>
                             
                             <!-- Presets -->
