@@ -135,34 +135,56 @@ jobs:
         $version = "${{ needs.version.outputs.version }}"
         $packageName = "RTSPVirtualCam-v$version-portable-win-x64"
         
-        # Create package directory
+        # Create clean package structure
         New-Item -ItemType Directory -Path $packageName -Force | Out-Null
+        New-Item -ItemType Directory -Path "$packageName/bin" -Force | Out-Null
+        New-Item -ItemType Directory -Path "$packageName/logs" -Force | Out-Null
         
-        # Copy binaries
-        Copy-Item ./publish/* $packageName/ -Recurse
+        # Copy ALL binaries to bin/ subfolder (keeps root clean)
+        Copy-Item ./publish/* "$packageName/bin/" -Recurse
         
-        # Copy docs
+        # Copy scripts folder if exists
+        if (Test-Path "scripts") {
+            New-Item -ItemType Directory -Path "$packageName/scripts" -Force | Out-Null
+            Copy-Item scripts/install-virtualcam.bat "$packageName/scripts/" -ErrorAction SilentlyContinue
+            Copy-Item scripts/uninstall-virtualcam.bat "$packageName/scripts/" -ErrorAction SilentlyContinue
+            Copy-Item scripts/softcam "$packageName/scripts/" -Recurse -ErrorAction SilentlyContinue
+        }
+        
+        # Copy docs to root
         Copy-Item README.md $packageName/ -ErrorAction SilentlyContinue
         Copy-Item LICENSE $packageName/ -ErrorAction SilentlyContinue
         Copy-Item CHANGELOG.md $packageName/ -ErrorAction SilentlyContinue
         
-        # Create quickstart
-        @"
-        RTSP VirtualCam v$version - Quick Start
-        ========================================
+        # Create Windows shortcut (.lnk) for professional appearance
+        $WshShell = New-Object -ComObject WScript.Shell
+        $shortcutPath = Join-Path (Resolve-Path $packageName).Path "RTSPVirtualCam.lnk"
+        $shortcut = $WshShell.CreateShortcut($shortcutPath)
+        $exeFullPath = Join-Path (Resolve-Path "$packageName/bin").Path "RTSPVirtualCam.exe"
+        $shortcut.TargetPath = $exeFullPath
+        $shortcut.WorkingDirectory = Join-Path (Resolve-Path "$packageName/bin").Path ""
+        $shortcut.IconLocation = "$exeFullPath,0"
+        $shortcut.Description = "RTSP VirtualCam - Stream RTSP to Virtual Camera"
+        $shortcut.Save()
         
-        1. Run RTSPVirtualCam.exe
-        2. Enter your RTSP URL (e.g., rtsp://user:pass@192.168.1.100:554/stream)
-        3. Click "Preview" to test
-        4. Click "Virtualize" to create virtual camera
-        5. Select "RTSP VirtualCam" in your video app
+        # Create QUICKSTART.txt
+        $quickstart = "RTSP VirtualCam v$version - Quick Start`r`n"
+        $quickstart += "========================================`r`n`r`n"
+        $quickstart += "HOW TO START:`r`n"
+        $quickstart += "  Double-click RTSPVirtualCam shortcut`r`n`r`n"
+        $quickstart += "FOLDER STRUCTURE:`r`n"
+        $quickstart += "  RTSPVirtualCam.lnk - Start application (shortcut)`r`n"
+        $quickstart += "  bin/               - Application files`r`n"
+        $quickstart += "  scripts/           - Virtual camera installation`r`n"
+        $quickstart += "  logs/              - Application logs`r`n`r`n"
+        $quickstart += "FIRST TIME SETUP:`r`n"
+        $quickstart += "  Run scripts/install-virtualcam.bat as Administrator`r`n"
+        $quickstart += "  to install the virtual camera driver`r`n`r`n"
+        $quickstart += "Requirements: Windows 10/11 (64-bit)`r`n`r`n"
+        $quickstart += "Support: https://github.com/${{ github.repository }}/issues"
+        Set-Content -Path "$packageName/QUICKSTART.txt" -Value $quickstart -Encoding UTF8
         
-        Requirements: Windows 11 (Build 22000+)
-        
-        Support: https://github.com/${{ github.repository }}/issues
-        "@ | Out-File -FilePath "$packageName/QUICKSTART.txt" -Encoding UTF8
-        
-        # Create ZIP (this goes to release assets, NOT to the repo)
+        # Create ZIP
         $zipName = "$packageName.zip"
         Compress-Archive -Path "$packageName/*" -DestinationPath $zipName -CompressionLevel Optimal
         
@@ -172,8 +194,9 @@ jobs:
         
         # Display info
         $size = [math]::Round((Get-Item $zipName).Length / 1MB, 2)
-        Write-Host "✅ Package created: $zipName ($size MB)"
-        Write-Host "✅ SHA256: $hash"
+        Write-Host "Package created: $zipName ($size MB)"
+        Write-Host "SHA256: $hash"
+        Write-Host "Structure: RTSPVirtualCam.lnk + bin/ + scripts/ + logs/ + docs"
         
     - name: 📤 Upload artifact
       uses: actions/upload-artifact@v4

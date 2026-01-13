@@ -53,6 +53,14 @@ dotnet publish src/RTSPVirtualCam/RTSPVirtualCam.csproj `
     --verbosity quiet
 Write-Success "Publish complete"
 
+# Force cleanup of build processes and release DLL locks
+Write-Step "Releasing build processes and DLL locks..."
+Get-Process | Where-Object {$_.ProcessName -like "*MSBuild*" -or $_.ProcessName -like "*VBCSCompiler*"} | Stop-Process -Force -ErrorAction SilentlyContinue
+[System.GC]::Collect()
+[System.GC]::WaitForPendingFinalizers()
+Start-Sleep -Seconds 2
+Write-Success "Processes released"
+
 # Step 5: Create Clean Package Structure
 Write-Step "Creating clean release package structure..."
 
