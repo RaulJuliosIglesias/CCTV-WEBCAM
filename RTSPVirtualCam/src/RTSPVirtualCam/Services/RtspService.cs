@@ -22,11 +22,17 @@ public class RtspService : IRtspService, IDisposable
     private bool _virtualCamEnabled;
     private long _frameCount;
     
-    // Camera settings
-    private bool _flipHorizontal;
-    private bool _flipVertical;
-    private int _brightness; // -100 to 100
-    private int _contrast;   // -100 to 100
+    // Camera settings - PREVIEW
+    private bool _previewFlipHorizontal;
+    private bool _previewFlipVertical;
+    private int _previewBrightness; // -100 to 100
+    private int _previewContrast;   // -100 to 100
+    
+    // Camera settings - VIRTUAL CAMERA OUTPUT
+    private bool _virtualFlipHorizontal;
+    private bool _virtualFlipVertical;
+    private int _virtualBrightness; // -100 to 100
+    private int _virtualContrast;   // -100 to 100
     
     public event EventHandler<RtspConnectionEventArgs>? ConnectionStateChanged;
     public event EventHandler<FrameEventArgs>? FrameReceived;
@@ -36,11 +42,17 @@ public class RtspService : IRtspService, IDisposable
     public bool IsConnected => _mediaPlayer?.IsPlaying ?? false;
     public bool IsVirtualCamActive => _obsOutput?.IsRunning ?? false;
     
-    // Camera settings properties
-    public bool FlipHorizontal { get => _flipHorizontal; set => _flipHorizontal = value; }
-    public bool FlipVertical { get => _flipVertical; set => _flipVertical = value; }
-    public int Brightness { get => _brightness; set => _brightness = Math.Clamp(value, -100, 100); }
-    public int Contrast { get => _contrast; set => _contrast = Math.Clamp(value, -100, 100); }
+    // Preview settings properties
+    public bool PreviewFlipHorizontal { get => _previewFlipHorizontal; set => _previewFlipHorizontal = value; }
+    public bool PreviewFlipVertical { get => _previewFlipVertical; set => _previewFlipVertical = value; }
+    public int PreviewBrightness { get => _previewBrightness; set => _previewBrightness = Math.Clamp(value, -100, 100); }
+    public int PreviewContrast { get => _previewContrast; set => _previewContrast = Math.Clamp(value, -100, 100); }
+    
+    // Virtual camera output settings properties
+    public bool VirtualFlipHorizontal { get => _virtualFlipHorizontal; set => _virtualFlipHorizontal = value; }
+    public bool VirtualFlipVertical { get => _virtualFlipVertical; set => _virtualFlipVertical = value; }
+    public int VirtualBrightness { get => _virtualBrightness; set => _virtualBrightness = Math.Clamp(value, -100, 100); }
+    public int VirtualContrast { get => _virtualContrast; set => _virtualContrast = Math.Clamp(value, -100, 100); }
     
     public int Width
     {
@@ -281,30 +293,49 @@ public class RtspService : IRtspService, IDisposable
         {
             _frameCount++;
             
-            // Copy BGRA data from buffer
+            // Copy BGRA data from buffer (original frame)
             int size = _frameWidth * _frameHeight * 4;
-            byte[] bgraData = new byte[size];
-            Marshal.Copy(_frameBuffer, bgraData, 0, size);
+            byte[] originalFrame = new byte[size];
+            Marshal.Copy(_frameBuffer, originalFrame, 0, size);
             
-            // Apply camera effects
-            if (_flipHorizontal || _flipVertical)
+            // === PREVIEW FRAME (for UI) ===
+            byte[] previewFrame = new byte[size];
+            Array.Copy(originalFrame, previewFrame, size);
+            
+            // Apply preview transformations
+            if (_previewFlipHorizontal || _previewFlipVertical)
             {
-                bgraData = ApplyFlip(bgraData, _frameWidth, _frameHeight, _flipHorizontal, _flipVertical);
+                previewFrame = ApplyFlip(previewFrame, _frameWidth, _frameHeight, _previewFlipHorizontal, _previewFlipVertical);
             }
             
-            if (_brightness != 0 || _contrast != 0)
+            if (_previewBrightness != 0 || _previewContrast != 0)
             {
-                ApplyBrightnessContrast(bgraData, _brightness, _contrast);
+                ApplyBrightnessContrast(previewFrame, _previewBrightness, _previewContrast);
             }
             
-            // Send frame to UI preview (every 2nd frame to reduce load)
+            // Send to UI preview (every 2nd frame to reduce load)
             if (_frameCount % 2 == 0)
             {
-                OnPreviewFrame?.Invoke(bgraData, _frameWidth, _frameHeight);
+                OnPreviewFrame?.Invoke(previewFrame, _frameWidth, _frameHeight);
             }
             
-            // Convert BGRA to NV12 and send to OBS
-            byte[] nv12Data = OBSVirtualCamOutput.BgraToNv12(bgraData, _frameWidth, _frameHeight);
+            // === VIRTUAL CAMERA OUTPUT FRAME ===
+            byte[] virtualFrame = new byte[size];
+            Array.Copy(originalFrame, virtualFrame, size);
+            
+            // Apply virtual camera transformations
+            if (_virtualFlipHorizontal || _virtualFlipVertical)
+            {
+                virtualFrame = ApplyFlip(virtualFrame, _frameWidth, _frameHeight, _virtualFlipHorizontal, _virtualFlipVertical);
+            }
+            
+            if (_virtualBrightness != 0 || _virtualContrast != 0)
+            {
+                ApplyBrightnessContrast(virtualFrame, _virtualBrightness, _virtualContrast);
+            }
+            
+            // Convert to NV12 and send to OBS Virtual Camera
+            byte[] nv12Data = OBSVirtualCamOutput.BgraToNv12(virtualFrame, _frameWidth, _frameHeight);
             
             // Get timestamp in nanoseconds
             ulong timestamp = (ulong)(DateTime.UtcNow.Ticks * 100);

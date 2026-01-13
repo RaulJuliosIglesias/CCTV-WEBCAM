@@ -190,51 +190,50 @@ public partial class MainViewModel : ObservableObject
     partial void OnPreviewFlipHorizontalChanged(bool value)
     {
         if (_rtspService is RtspService rtspSvc)
-            rtspSvc.FlipHorizontal = value;
+            rtspSvc.PreviewFlipHorizontal = value;
     }
     
     partial void OnPreviewFlipVerticalChanged(bool value)
     {
         if (_rtspService is RtspService rtspSvc)
-            rtspSvc.FlipVertical = value;
+            rtspSvc.PreviewFlipVertical = value;
     }
     
     partial void OnPreviewBrightnessChanged(int value)
     {
         if (_rtspService is RtspService rtspSvc)
-            rtspSvc.Brightness = value;
+            rtspSvc.PreviewBrightness = value;
     }
     
     partial void OnPreviewContrastChanged(int value)
     {
         if (_rtspService is RtspService rtspSvc)
-            rtspSvc.Contrast = value;
+            rtspSvc.PreviewContrast = value;
     }
     
-    // Virtual camera controls - apply correction for horizontal flip
+    // Virtual camera controls
     partial void OnVirtualFlipHorizontalChanged(bool value)
     {
-        // Apply inverse flip to correct the virtual camera orientation
         if (_rtspService is RtspService rtspSvc)
-            rtspSvc.FlipHorizontal = !value; // Invert to fix the flip issue
+            rtspSvc.VirtualFlipHorizontal = value;
     }
     
     partial void OnVirtualFlipVerticalChanged(bool value)
     {
         if (_rtspService is RtspService rtspSvc)
-            rtspSvc.FlipVertical = value;
+            rtspSvc.VirtualFlipVertical = value;
     }
     
     partial void OnVirtualBrightnessChanged(int value)
     {
         if (_rtspService is RtspService rtspSvc)
-            rtspSvc.Brightness = value;
+            rtspSvc.VirtualBrightness = value;
     }
     
     partial void OnVirtualContrastChanged(int value)
     {
         if (_rtspService is RtspService rtspSvc)
-            rtspSvc.Contrast = value;
+            rtspSvc.VirtualContrast = value;
     }
     
     private static readonly string LogFilePath = System.IO.Path.Combine(
