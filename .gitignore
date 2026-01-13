@@ -1,62 +1,23 @@
-# Build results
-[Dd]ebug/
-[Dd]ebugPublic/
-[Rr]elease/
-[Rr]eleases/
-x64/
-x86/
-build/
-bld/
-[Bb]in/
-[Oo]bj/
+# ============================================
+# Git Ignore - RTSP VirtualCam
+# ============================================
 
-# MSTest test Results
-[Tt]est[Rr]esult*/
-[Bb]uild[Ll]og.*
-
-# NuGet
-*.nupkg
-packages/
-
-# Visual Studio
-.vs/
-*.user
-*.suo
-*.userosscache
-*.sln.docstates
-
-# Build results
-[Dd]ebug/
-[Dd]ebugPublic/
-[Rr]elease/
-[Rr]eleases/
-x64/
-x86/
-build/
-bld/
-[Bb]in/
-[Oo]bj/
-
-# MSTest test Results
-[Tt]est[Rr]esult*/
-[Bb]uild[Ll]og.*
-
-# NuGet
-*.nupkg
-packages/
-
-# Visual Studio
-.vs/
-*.user
-*.suo
-*.userosscache
-*.sln.docstates
-
-# Large files and releases
-RTSPVirtualCam/releases/
-*.zip
+# Large binary files (exceed GitHub 100MB limit)
 *.exe
 *.pdb
+*.zip
+
+# Build results
+[Bb]in/
+[Oo]bj/
+[Ll]og/
+[Ll]ogs/
+publish/
+publish-temp/
+package-temp/
+
+# Do NOT ignore releases folder (contains downloadable ZIPs)
+!releases/
 
 # User-specific files
 *.user
@@ -64,10 +25,59 @@ RTSPVirtualCam/releases/
 *.userosscache
 *.sln.docstates
 
-# IDE files
+# Visual Studio
 .vs/
+*.rsuser
+launchSettings.json
+
+# Rider
+.idea/
+
+# VS Code
 .vscode/
 
-# OS files
-.DS_Store
+# NuGet
+packages/
+*.nupkg
+project.lock.json
+project.fragment.lock.json
+
+# Windows
 Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+
+# Mac
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Logs
+*.log
+
+# Native libraries cache (VLC)
+libvlc/
+
+# Test results
+TestResults/
+*.trx
+
+# Code coverage
+coverage/
+*.coverage
+*.coveragexml
+
+# Resharper
+_ReSharper*/
+*.DotSettings.user
+
+# NCrunch
+*.ncrunchproject
+*.ncrunchsolution
+_NCrunch_*
+
+# Temp files
+*.tmp
+*.temp
+~$*
