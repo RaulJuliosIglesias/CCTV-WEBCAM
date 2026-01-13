@@ -198,8 +198,15 @@ public class RtspService : IRtspService, IDisposable
             _frameBuffer = Marshal.AllocHGlobal(bufferSize);
             
             // Set up video callbacks to capture frames
-            if (_mediaPlayer != null)
+            // Must stop and restart the player for callbacks to take effect
+            if (_mediaPlayer != null && _media != null)
             {
+                OnLog?.Invoke("🔄 Restarting stream with frame capture...");
+                
+                // Stop current playback
+                _mediaPlayer.Stop();
+                
+                // Configure video callbacks BEFORE playing
                 _mediaPlayer.SetVideoCallbacks(
                     LockCallback,
                     UnlockCallback,
@@ -208,7 +215,11 @@ public class RtspService : IRtspService, IDisposable
                 
                 _mediaPlayer.SetVideoFormat("RV32", (uint)width, (uint)height, (uint)(width * 4));
                 
+                // Restart playback with callbacks active
+                _mediaPlayer.Play(_media);
+                
                 OnLog?.Invoke($"✅ Virtual camera capturing: {width}x{height}");
+                OnLog?.Invoke("📹 Frame capture active - sending to OBS Virtual Camera");
             }
             
             return true;
