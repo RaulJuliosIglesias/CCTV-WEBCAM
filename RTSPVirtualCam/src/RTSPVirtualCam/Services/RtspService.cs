@@ -1,5 +1,6 @@
 using System;
 using System.Linq;
+using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
 using LibVLCSharp.Shared;
@@ -12,10 +13,21 @@ public class RtspService : IRtspService, IDisposable
     private MediaPlayer? _mediaPlayer;
     private Media? _media;
     
+    // Frame capture for virtual camera
+    private OBSVirtualCamOutput? _obsOutput;
+    private IntPtr _frameBuffer = IntPtr.Zero;
+    private int _frameWidth;
+    private int _frameHeight;
+    private readonly object _frameLock = new();
+    private bool _virtualCamEnabled;
+    private long _frameCount;
+    
     public event EventHandler<RtspConnectionEventArgs>? ConnectionStateChanged;
     public event EventHandler<FrameEventArgs>? FrameReceived;
+    public event Action<string>? OnLog;
     
     public bool IsConnected => _mediaPlayer?.IsPlaying ?? false;
+    public bool IsVirtualCamActive => _obsOutput?.IsRunning ?? false;
     
     public int Width
     {
@@ -150,8 +162,132 @@ public class RtspService : IRtspService, IDisposable
     
     public MediaPlayer? GetMediaPlayer() => _mediaPlayer;
     
+    /// <summary>
+    /// Start sending frames to OBS Virtual Camera
+    /// </summary>
+    public bool StartVirtualCamera(int width, int height, int fps = 30)
+    {
+        try
+        {
+            if (_obsOutput != null)
+            {
+                _obsOutput.Stop();
+                _obsOutput.Dispose();
+            }
+            
+            _obsOutput = new OBSVirtualCamOutput();
+            _obsOutput.OnLog += msg => OnLog?.Invoke(msg);
+            
+            if (!_obsOutput.Start((uint)width, (uint)height, fps))
+            {
+                OnLog?.Invoke("❌ Failed to start OBS Virtual Camera output");
+                return false;
+            }
+            
+            _frameWidth = width;
+            _frameHeight = height;
+            _virtualCamEnabled = true;
+            _frameCount = 0;
+            
+            // Allocate frame buffer for BGRA
+            int bufferSize = width * height * 4;
+            if (_frameBuffer != IntPtr.Zero)
+            {
+                Marshal.FreeHGlobal(_frameBuffer);
+            }
+            _frameBuffer = Marshal.AllocHGlobal(bufferSize);
+            
+            // Set up video callbacks to capture frames
+            if (_mediaPlayer != null)
+            {
+                _mediaPlayer.SetVideoCallbacks(
+                    LockCallback,
+                    UnlockCallback,
+                    DisplayCallback
+                );
+                
+                _mediaPlayer.SetVideoFormat("RV32", (uint)width, (uint)height, (uint)(width * 4));
+                
+                OnLog?.Invoke($"✅ Virtual camera capturing: {width}x{height}");
+            }
+            
+            return true;
+        }
+        catch (Exception ex)
+        {
+            OnLog?.Invoke($"❌ Virtual camera error: {ex.Message}");
+            return false;
+        }
+    }
+    
+    public void StopVirtualCamera()
+    {
+        _virtualCamEnabled = false;
+        
+        _obsOutput?.Stop();
+        _obsOutput?.Dispose();
+        _obsOutput = null;
+        
+        if (_frameBuffer != IntPtr.Zero)
+        {
+            Marshal.FreeHGlobal(_frameBuffer);
+            _frameBuffer = IntPtr.Zero;
+        }
+        
+        OnLog?.Invoke("Virtual camera stopped");
+    }
+    
+    private IntPtr LockCallback(IntPtr opaque, IntPtr planes)
+    {
+        Marshal.WriteIntPtr(planes, _frameBuffer);
+        return IntPtr.Zero;
+    }
+    
+    private void UnlockCallback(IntPtr opaque, IntPtr picture, IntPtr planes)
+    {
+        // Frame data is now in _frameBuffer
+    }
+    
+    private void DisplayCallback(IntPtr opaque, IntPtr picture)
+    {
+        if (!_virtualCamEnabled || _obsOutput == null || _frameBuffer == IntPtr.Zero)
+            return;
+        
+        try
+        {
+            _frameCount++;
+            
+            // Copy BGRA data from buffer
+            int size = _frameWidth * _frameHeight * 4;
+            byte[] bgraData = new byte[size];
+            Marshal.Copy(_frameBuffer, bgraData, 0, size);
+            
+            // Convert BGRA to NV12 and send to OBS
+            byte[] nv12Data = OBSVirtualCamOutput.BgraToNv12(bgraData, _frameWidth, _frameHeight);
+            
+            // Get timestamp in nanoseconds
+            ulong timestamp = (ulong)(DateTime.UtcNow.Ticks * 100);
+            
+            _obsOutput.SendFrame(nv12Data, timestamp);
+            
+            // Log every 100 frames
+            if (_frameCount % 100 == 0)
+            {
+                OnLog?.Invoke($"📹 Sent {_frameCount} frames to virtual camera");
+            }
+        }
+        catch (Exception ex)
+        {
+            if (_frameCount % 100 == 0)
+            {
+                OnLog?.Invoke($"⚠️ Frame error: {ex.Message}");
+            }
+        }
+    }
+    
     public void Dispose()
     {
+        StopVirtualCamera();
         DisconnectAsync().Wait();
     }
 }

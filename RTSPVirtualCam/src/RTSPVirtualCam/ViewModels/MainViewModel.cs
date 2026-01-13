@@ -570,7 +570,7 @@ public partial class MainViewModel : ObservableObject
             return;
         }
         
-        // Windows 10 Support Path - Softcam
+        // Windows 10 Support Path - OBS Virtual Camera
         if (UseWindows10Mode)
         {
             if (!IsSoftCamInstalled)
@@ -581,16 +581,44 @@ public partial class MainViewModel : ObservableObject
                 return;
             }
             
-            AddLog("✅ Virtual camera driver is installed!");
-            AddLog("📹 'OBS Virtual Camera' is registered");
-            AddLog("💡 Select 'OBS Virtual Camera' in your video app");
-            AddLog("ℹ️ Note: Restart video apps to see the camera");
-            AddLog($"   Your RTSP URL: {CurrentUrl}");
+            AddLog("═══════════════════════════════════════");
+            AddLog("🚀 Starting OBS Virtual Camera output...");
+            AddLog("═══════════════════════════════════════");
             
-            StatusText = "Virtual Camera Ready";
-            StatusIcon = "🔵";
-            IsVirtualized = true;
-            AddToHistory(CurrentUrl);
+            // Get stream dimensions or use defaults
+            int width = _rtspService.Width > 0 ? _rtspService.Width : 1280;
+            int height = _rtspService.Height > 0 ? _rtspService.Height : 720;
+            int fps = _rtspService.FrameRate > 0 ? _rtspService.FrameRate : 30;
+            
+            AddLog($"📐 Stream resolution: {width}x{height} @ {fps}fps");
+            
+            // Subscribe to logs from RtspService
+            if (_rtspService is RtspService rtspSvc)
+            {
+                rtspSvc.OnLog += msg => AddLog(msg);
+                
+                // Start virtual camera output
+                bool started = rtspSvc.StartVirtualCamera(width, height, fps);
+                
+                if (started)
+                {
+                    AddLog("✅ Virtual camera output started!");
+                    AddLog("📹 Frames are being sent to 'OBS Virtual Camera'");
+                    AddLog("💡 Select 'OBS Virtual Camera' in your video app");
+                    AddLog("ℹ️ RESTART video apps (Chrome, Zoom, Teams) to see camera");
+                    
+                    StatusText = "🔴 LIVE - Virtual Camera Active";
+                    StatusIcon = "🔵";
+                    IsVirtualized = true;
+                    AddToHistory(CurrentUrl);
+                }
+                else
+                {
+                    AddLog("❌ Failed to start virtual camera output");
+                    AddLog("💡 Make sure no other app is using OBS Virtual Camera");
+                    StatusText = "Virtual camera failed";
+                }
+            }
             return;
         }
 
