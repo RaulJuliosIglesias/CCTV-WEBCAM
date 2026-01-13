@@ -140,6 +140,13 @@ public partial class MainViewModel : ObservableObject
     [ObservableProperty]
     private int _virtualContrast;
     
+    // PTZ Speed Controls
+    [ObservableProperty]
+    private int _ptzMoveSpeed = 75; // Pan/Tilt speed (0-100)
+    
+    [ObservableProperty]
+    private int _ptzZoomSpeed = 75; // Zoom speed (0-100)
+    
     // Preview bitmap
     [ObservableProperty]
     private System.Windows.Media.Imaging.WriteableBitmap? _previewBitmap;
@@ -168,8 +175,8 @@ public partial class MainViewModel : ObservableObject
         // Subscribe to PTZ service logs
         _ptzService.OnLog += (msg) => AddLog(msg);
         
-        // Initialize PTZ presets (1-20 for Hikvision)
-        for (int i = 1; i <= 20; i++)
+        // Initialize PTZ presets (1-30 for keyboard shortcuts)
+        for (int i = 1; i <= 30; i++)
         {
             PtzPresets.Add(new PtzPreset { Id = i, Name = $"Preset {i}", IsEnabled = true });
         }
@@ -895,7 +902,7 @@ public partial class MainViewModel : ObservableObject
     private async Task PtzZoomOutAsync() => await ExecutePtzCommandAsync("zoomout");
     
     [RelayCommand]
-    private async Task GotoPresetAsync(PtzPreset? preset)
+    public async Task GotoPresetAsync(PtzPreset? preset)
     {
         if (preset == null) return;
         await ExecutePtzPresetAsync(preset.Id);
@@ -993,6 +1000,7 @@ public partial class MainViewModel : ObservableObject
                 content = new System.Net.Http.StringContent(xmlPayload, System.Text.Encoding.UTF8, "application/xml");
                 
                 AddLog($"🎮 PTZ: {command} (pan={pan}, tilt={tilt}, zoom={zoom})");
+                AddLog($"📊 Speed settings: Move={PtzMoveSpeed}, Zoom={PtzZoomSpeed}");
                 
                 var response = await client.PutAsync(url, content);
                 
@@ -1170,16 +1178,14 @@ public partial class MainViewModel : ObservableObject
     
     private (int pan, int tilt, int zoom) GetPtzValues(string command)
     {
-        int speed = 75; // Increased from 50 to 75 for more responsive movement
-        
         return command.ToLower() switch
         {
-            "up" => (0, speed, 0),
-            "down" => (0, -speed, 0),
-            "left" => (-speed, 0, 0),
-            "right" => (speed, 0, 0),
-            "zoomin" => (0, 0, speed),
-            "zoomout" => (0, 0, -speed),
+            "up" => (0, PtzMoveSpeed, 0),
+            "down" => (0, -PtzMoveSpeed, 0),
+            "left" => (-PtzMoveSpeed, 0, 0),
+            "right" => (PtzMoveSpeed, 0, 0),
+            "zoomin" => (0, 0, PtzZoomSpeed),
+            "zoomout" => (0, 0, -PtzZoomSpeed),
             _ => (0, 0, 0)
         };
     }

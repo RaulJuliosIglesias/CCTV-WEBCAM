@@ -1,5 +1,6 @@
 using System;
 using System.Diagnostics;
+using System.Linq;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
@@ -71,19 +72,89 @@ public partial class MainWindow : Window
     {
         AddDebugLog($"PreviewKeyDown: Key={e.Key}, Source={e.Source?.GetType().Name}, FocusedElement={Keyboard.FocusedElement?.GetType().Name}");
         
-        // Handle PTZ keys at preview level to ensure they're not intercepted
+        // Handle PTZ keys at preview level to ensure they're not intercepted by sliders
         if (IsPtzKey(e.Key))
         {
+            // Only skip PTZ processing for TextBox (user is typing)
             if (Keyboard.FocusedElement is TextBox)
             {
-                AddDebugLog("TextBox has focus, ignoring PTZ key");
+                AddDebugLog("TextBox has focus, allowing normal text input");
                 return;
             }
             
+            // CRITICAL: Mark as handled IMMEDIATELY to prevent sliders from receiving the event
+            // This must happen before the await or the event will propagate before being marked
+            e.Handled = true;
+            
             AddDebugLog($"Processing PTZ key: {e.Key}");
             await ProcessPtzKey(e.Key);
-            e.Handled = true;
         }
+        // Handle preset shortcuts
+        else if (IsPresetKey(e.Key))
+        {
+            // Only skip for TextBox
+            if (Keyboard.FocusedElement is TextBox)
+            {
+                return;
+            }
+            
+            // Mark as handled immediately
+            e.Handled = true;
+            
+            int presetId = await GetPresetIdFromKey(e.Key, e.KeyboardDevice.Modifiers);
+            if (presetId > 0)
+            {
+                AddDebugLog($"Going to preset {presetId}");
+                var preset = _viewModel.PtzPresets.FirstOrDefault(p => p.Id == presetId);
+                if (preset != null)
+                {
+                    await _viewModel.GotoPresetAsync(preset);
+                }
+            }
+        }
+    }
+    
+    private bool IsPresetKey(Key key)
+    {
+        return key == Key.D1 || key == Key.D2 || key == Key.D3 || key == Key.D4 || key == Key.D5 ||
+               key == Key.D6 || key == Key.D7 || key == Key.D8 || key == Key.D9 || key == Key.D0 ||
+               key == Key.NumPad1 || key == Key.NumPad2 || key == Key.NumPad3 || key == Key.NumPad4 ||
+               key == Key.NumPad5 || key == Key.NumPad6 || key == Key.NumPad7 || key == Key.NumPad8 ||
+               key == Key.NumPad9 || key == Key.NumPad0;
+    }
+    
+    private async Task<int> GetPresetIdFromKey(Key key, ModifierKeys modifiers)
+    {
+        int baseNumber = key switch
+        {
+            Key.D1 or Key.NumPad1 => 1,
+            Key.D2 or Key.NumPad2 => 2,
+            Key.D3 or Key.NumPad3 => 3,
+            Key.D4 or Key.NumPad4 => 4,
+            Key.D5 or Key.NumPad5 => 5,
+            Key.D6 or Key.NumPad6 => 6,
+            Key.D7 or Key.NumPad7 => 7,
+            Key.D8 or Key.NumPad8 => 8,
+            Key.D9 or Key.NumPad9 => 9,
+            Key.D0 or Key.NumPad0 => 10,
+            _ => 0
+        };
+        
+        if (baseNumber == 0) return 0;
+        
+        // No modifiers: 1-10
+        if (modifiers == ModifierKeys.None)
+            return baseNumber;
+        
+        // Ctrl: 11-20
+        if (modifiers == ModifierKeys.Control)
+            return 10 + baseNumber;
+        
+        // Shift: 21-30
+        if (modifiers == ModifierKeys.Shift)
+            return 20 + baseNumber;
+        
+        return 0;
     }
     
     private bool IsPtzKey(Key key)
@@ -128,12 +199,13 @@ public partial class MainWindow : Window
     {
         AddDebugLog($"KeyDown: Key={e.Key}, Source={e.Source?.GetType().Name}, Handled={e.Handled}");
         
-        // Only handle PTZ keys when not in text boxes and not already handled
+        // Skip if already handled by PreviewKeyDown
         if (e.Handled) return;
         
+        // Only skip for TextBox (user is typing)
         if (Keyboard.FocusedElement is TextBox)
         {
-            AddDebugLog("TextBox has focus, ignoring KeyDown");
+            AddDebugLog("TextBox has focus in KeyDown, allowing normal text input");
             return;
         }
         

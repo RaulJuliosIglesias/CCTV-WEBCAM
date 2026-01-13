@@ -549,7 +549,24 @@
                             
                             <!-- PTZ Control -->
                             <TextBlock Text="🎯 PTZ CONTROL" FontSize="9" Foreground="#6C7086" FontWeight="Bold" Margin="0,0,0,4"/>
-                            <TextBlock Text="💡 Keyboard: Arrow keys + Page Up/Down" FontSize="8" Foreground="#89B4FA" Margin="0,0,0,8"/>
+                            <TextBlock Text="💡 Keyboard: Arrow keys + Page Up/Down + 1-0 for presets (Ctrl+1-0: 11-20, Shift+1-0: 21-30)" FontSize="8" Foreground="#89B4FA" Margin="0,0,0,8"/>
+                            
+                            <!-- PTZ Speed Controls -->
+                            <StackPanel Margin="0,0,0,12">
+                                <Grid>
+                                    <TextBlock Text="🏃 Move Speed" FontSize="10" Foreground="#A6ADC8"/>
+                                    <TextBlock Text="{Binding PtzMoveSpeed}" FontSize="10" Foreground="#89B4FA" HorizontalAlignment="Right"/>
+                                </Grid>
+                                <Slider Minimum="10" Maximum="100" Value="{Binding PtzMoveSpeed}" Margin="0,4,0,0" TickFrequency="10" IsSnapToTickEnabled="True"/>
+                            </StackPanel>
+                            
+                            <StackPanel Margin="0,0,0,12">
+                                <Grid>
+                                    <TextBlock Text="🔍 Zoom Speed" FontSize="10" Foreground="#A6ADC8"/>
+                                    <TextBlock Text="{Binding PtzZoomSpeed}" FontSize="10" Foreground="#89B4FA" HorizontalAlignment="Right"/>
+                                </Grid>
+                                <Slider Minimum="10" Maximum="100" Value="{Binding PtzZoomSpeed}" Margin="0,4,0,0" TickFrequency="10" IsSnapToTickEnabled="True"/>
+                            </StackPanel>
                             
                             <Grid Margin="0,0,0,12">
                                 <Grid.ColumnDefinitions>
