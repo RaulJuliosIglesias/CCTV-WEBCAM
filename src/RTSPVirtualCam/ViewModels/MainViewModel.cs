@@ -695,6 +695,25 @@ public partial class MainViewModel : ObservableObject
         }
     }
     
+    [RelayCommand(CanExecute = nameof(CanCancelConnection))]
+    private void CancelConnection()
+    {
+        if (!IsConnecting) return;
+        
+        AddLog("🚫 Connection cancelled by user");
+        IsConnecting = false;
+        StatusText = "Connection cancelled";
+        StatusIcon = "⚪";
+        
+        // Reset command states
+        PreviewCommand.NotifyCanExecuteChanged();
+        VirtualizeCommand.NotifyCanExecuteChanged();
+        StopCommand.NotifyCanExecuteChanged();
+        CancelConnectionCommand.NotifyCanExecuteChanged();
+    }
+    
+    private bool CanCancelConnection() => IsConnecting;
+    
     private bool CanPreview() => !IsConnecting && !IsConnected && !string.IsNullOrWhiteSpace(CurrentUrl);
     
     [RelayCommand(CanExecute = nameof(CanVirtualize))]
