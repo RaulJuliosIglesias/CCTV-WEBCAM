@@ -194,20 +194,28 @@ public class RtspService : IRtspService, IDisposable
     {
         try
         {
+            OnLog?.Invoke($"[DEBUG] StartVirtualCamera called: {width}x{height}@{fps}fps");
+            
             if (_obsOutput != null)
             {
+                OnLog?.Invoke("[DEBUG] Stopping existing OBS output...");
                 _obsOutput.Stop();
                 _obsOutput.Dispose();
+                _obsOutput = null;
             }
             
+            OnLog?.Invoke("[DEBUG] Creating new OBSVirtualCamOutput...");
             _obsOutput = new OBSVirtualCamOutput();
             _obsOutput.OnLog += msg => OnLog?.Invoke(msg);
             
+            OnLog?.Invoke("[DEBUG] Starting OBS output...");
             if (!_obsOutput.Start((uint)width, (uint)height, fps))
             {
                 OnLog?.Invoke("❌ Failed to start OBS Virtual Camera output");
                 return false;
             }
+            
+            OnLog?.Invoke("[DEBUG] OBS output started successfully");
             
             _frameWidth = width;
             _frameHeight = height;
@@ -216,11 +224,16 @@ public class RtspService : IRtspService, IDisposable
             
             // Allocate frame buffer for BGRA
             int bufferSize = width * height * 4;
+            OnLog?.Invoke($"[DEBUG] Allocating frame buffer: {bufferSize} bytes");
+            
             if (_frameBuffer != IntPtr.Zero)
             {
+                OnLog?.Invoke("[DEBUG] Freeing existing frame buffer...");
                 Marshal.FreeHGlobal(_frameBuffer);
+                _frameBuffer = IntPtr.Zero;
             }
             _frameBuffer = Marshal.AllocHGlobal(bufferSize);
+            OnLog?.Invoke($"[DEBUG] Frame buffer allocated at: 0x{_frameBuffer:X}");
             
             // Set up video callbacks to capture frames
             // Must stop and restart the player for callbacks to take effect
@@ -228,49 +241,100 @@ public class RtspService : IRtspService, IDisposable
             {
                 OnLog?.Invoke("🔄 Restarting stream with frame capture...");
                 
-                // Stop current playback
+                OnLog?.Invoke("[DEBUG] Stopping media player...");
                 _mediaPlayer.Stop();
                 
-                // Configure video callbacks BEFORE playing
+                OnLog?.Invoke("[DEBUG] Setting video callbacks...");
                 _mediaPlayer.SetVideoCallbacks(
                     LockCallback,
                     UnlockCallback,
                     DisplayCallback
                 );
                 
+                OnLog?.Invoke($"[DEBUG] Setting video format RV32 {width}x{height}...");
                 _mediaPlayer.SetVideoFormat("RV32", (uint)width, (uint)height, (uint)(width * 4));
                 
-                // Restart playback with callbacks active
+                OnLog?.Invoke("[DEBUG] Starting playback...");
                 _mediaPlayer.Play(_media);
                 
                 OnLog?.Invoke($"✅ Virtual camera capturing: {width}x{height}");
                 OnLog?.Invoke("📹 Frame capture active - sending to OBS Virtual Camera");
             }
+            else
+            {
+                OnLog?.Invoke("[DEBUG] WARNING: MediaPlayer or Media is null!");
+            }
             
+            OnLog?.Invoke("[DEBUG] StartVirtualCamera completed successfully");
             return true;
         }
         catch (Exception ex)
         {
-            OnLog?.Invoke($"❌ Virtual camera error: {ex.Message}");
+            OnLog?.Invoke($"❌❌❌ Virtual camera CRASH: {ex.Message}");
+            OnLog?.Invoke($"[DEBUG] Stack trace: {ex.StackTrace}");
             return false;
         }
     }
     
     public void StopVirtualCamera()
     {
-        _virtualCamEnabled = false;
-        
-        _obsOutput?.Stop();
-        _obsOutput?.Dispose();
-        _obsOutput = null;
-        
-        if (_frameBuffer != IntPtr.Zero)
+        try
         {
-            Marshal.FreeHGlobal(_frameBuffer);
-            _frameBuffer = IntPtr.Zero;
+            OnLog?.Invoke("[DEBUG] StopVirtualCamera called");
+            
+            // CRITICAL: Disable flag FIRST to stop callback processing
+            _virtualCamEnabled = false;
+            
+            // Stop media player to stop callbacks from firing
+            if (_mediaPlayer != null && _media != null)
+            {
+                OnLog?.Invoke("[DEBUG] Stopping media player to drain callbacks...");
+                _mediaPlayer.Stop();
+                
+                // Clear video callbacks
+                OnLog?.Invoke("[DEBUG] Clearing video callbacks...");
+                _mediaPlayer.SetVideoCallbacks(null, null, null);
+                
+                // Wait for callbacks to drain
+                OnLog?.Invoke("[DEBUG] Waiting for callbacks to drain...");
+                System.Threading.Thread.Sleep(100);
+                
+                // Restart player with preview callbacks (not virtual camera)
+                OnLog?.Invoke("[DEBUG] Restarting with preview callbacks...");
+                _mediaPlayer.SetVideoCallbacks(
+                    LockCallback,
+                    UnlockCallback,
+                    PreviewDisplayCallback
+                );
+                _mediaPlayer.SetVideoFormat("RV32", (uint)_frameWidth, (uint)_frameHeight, (uint)(_frameWidth * 4));
+                _mediaPlayer.Play(_media);
+                OnLog?.Invoke("[DEBUG] Preview restored");
+            }
+            
+            if (_obsOutput != null)
+            {
+                OnLog?.Invoke("[DEBUG] Stopping OBS output...");
+                _obsOutput.Stop();
+                OnLog?.Invoke("[DEBUG] Disposing OBS output...");
+                _obsOutput.Dispose();
+                _obsOutput = null;
+            }
+            
+            // DON'T free the frame buffer - it's still needed for preview!
+            // if (_frameBuffer != IntPtr.Zero)
+            // {
+            //     OnLog?.Invoke("[DEBUG] Freeing frame buffer...");
+            //     Marshal.FreeHGlobal(_frameBuffer);
+            //     _frameBuffer = IntPtr.Zero;
+            // }
+            
+            OnLog?.Invoke("✅ Virtual camera stopped");
         }
-        
-        OnLog?.Invoke("Virtual camera stopped");
+        catch (Exception ex)
+        {
+            OnLog?.Invoke($"❌❌❌ StopVirtualCamera CRASH: {ex.Message}");
+            OnLog?.Invoke($"[DEBUG] Stack trace: {ex.StackTrace}");
+        }
     }
     
     // Enable software rendering for embedded preview (without OBS virtual camera)

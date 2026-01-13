@@ -288,6 +288,12 @@ Log.Logger = new LoggerConfiguration()
 - **Analytics**: Detección de movimiento y alertas inteligentes
 - **RTMP Support**: Streaming a plataformas como YouTube/Twitch
 
+### 🎯 v2.5 - Multi Virtual Camera (Planned)
+- **Unity Capture Integration**: Support for up to 10 virtual cameras simultaneously
+- **Per-Camera Virtual Output**: Each camera slot can have its own virtual camera output
+- **Auto-Detection**: Automatic detection of available virtual camera drivers
+- **Easy Setup**: One-click installation of Unity Capture drivers
+
 ### 🔮 v3.0 - Enterprise & AI Features (Future)
 - **AI Discovery**: Descubrimiento automático de cámaras con IA
 - **Multi-Platform**: Soporte macOS y Linux

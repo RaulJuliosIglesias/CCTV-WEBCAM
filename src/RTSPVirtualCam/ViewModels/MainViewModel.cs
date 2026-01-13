@@ -324,15 +324,33 @@ public partial class MainViewModel : ObservableObject
         LogText = _logBuilder.ToString();
         Log.Information(message);
         
-        // Also write to file
+        // Write to file immediately with flush
         try
         {
             var logDir = System.IO.Path.GetDirectoryName(LogFilePath);
             if (!System.IO.Directory.Exists(logDir))
                 System.IO.Directory.CreateDirectory(logDir!);
-            System.IO.File.AppendAllText(LogFilePath, logEntry + Environment.NewLine);
+            
+            using (var writer = new System.IO.StreamWriter(LogFilePath, true))
+            {
+                writer.WriteLine(logEntry);
+                writer.Flush();
+            }
         }
         catch { /* Ignore file errors */ }
+    }
+    
+    // Show popup dialog for important warnings
+    public void ShowWarningDialog(string title, string message)
+    {
+        System.Windows.Application.Current.Dispatcher.Invoke(() =>
+        {
+            System.Windows.MessageBox.Show(
+                message,
+                title,
+                System.Windows.MessageBoxButton.OK,
+                System.Windows.MessageBoxImage.Warning);
+        });
     }
     
     [RelayCommand]
@@ -835,6 +853,28 @@ public partial class MainViewModel : ObservableObject
                 AddLog("⚠️ Virtual camera driver not installed");
                 AddLog("👉 Click 'Install' button in the WINDOWS 10 DRIVER panel");
                 StatusText = "Driver not installed";
+                return;
+            }
+            
+            // Check if another camera is already virtualized
+            var alreadyVirtualized = CameraSlots.FirstOrDefault(s => s.IsVirtualized && s != SelectedCameraSlot);
+            if (alreadyVirtualized != null)
+            {
+                AddLog("═══════════════════════════════════════");
+                AddLog("⚠️ Only ONE camera can be virtualized at a time");
+                AddLog("═══════════════════════════════════════");
+                AddLog($"❌ {alreadyVirtualized.SlotName} is already using the virtual camera");
+                StatusText = "Another camera is already virtualized";
+                
+                // Show popup dialog
+                ShowWarningDialog(
+                    "⚠️ Virtual Camera In Use",
+                    $"Only ONE camera can be virtualized at a time.\n\n" +
+                    $"'{alreadyVirtualized.SlotName}' is currently using the virtual camera.\n\n" +
+                    $"To virtualize '{SelectedCameraSlot.SlotName}':\n" +
+                    $"1. Select '{alreadyVirtualized.SlotName}'\n" +
+                    $"2. Click 'Stop' to stop its virtualization\n" +
+                    $"3. Then select and virtualize '{SelectedCameraSlot.SlotName}'");
                 return;
             }
             

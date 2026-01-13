@@ -137,16 +137,44 @@ public partial class App : Application
     private void OnUnhandledException(object sender, UnhandledExceptionEventArgs e)
     {
         var ex = e.ExceptionObject as Exception;
+        var crashLog = $"[CRASH] {DateTime.Now:yyyy-MM-dd HH:mm:ss}\n" +
+                       $"Message: {ex?.Message}\n" +
+                       $"Stack: {ex?.StackTrace}\n" +
+                       $"Inner: {ex?.InnerException?.Message}\n";
+        
+        // Write crash log to file immediately
+        try
+        {
+            var crashFile = System.IO.Path.Combine(AppContext.BaseDirectory, "logs", "crash.log");
+            System.IO.Directory.CreateDirectory(System.IO.Path.GetDirectoryName(crashFile)!);
+            System.IO.File.AppendAllText(crashFile, crashLog + "\n---\n");
+        }
+        catch { }
+        
         Log.Fatal(ex, "Unhandled exception");
-        MessageBox.Show($"Fatal error:\n\n{ex?.Message}", "RTSP VirtualCam - Error", 
-            MessageBoxButton.OK, MessageBoxImage.Error);
+        MessageBox.Show($"Fatal error:\n\n{ex?.Message}\n\nStack: {ex?.StackTrace?.Substring(0, Math.Min(500, ex?.StackTrace?.Length ?? 0))}", 
+            "RTSP VirtualCam - CRASH", MessageBoxButton.OK, MessageBoxImage.Error);
     }
     
     private void OnDispatcherUnhandledException(object sender, DispatcherUnhandledExceptionEventArgs e)
     {
+        var crashLog = $"[DISPATCHER CRASH] {DateTime.Now:yyyy-MM-dd HH:mm:ss}\n" +
+                       $"Message: {e.Exception.Message}\n" +
+                       $"Stack: {e.Exception.StackTrace}\n" +
+                       $"Inner: {e.Exception.InnerException?.Message}\n";
+        
+        // Write crash log to file immediately
+        try
+        {
+            var crashFile = System.IO.Path.Combine(AppContext.BaseDirectory, "logs", "crash.log");
+            System.IO.Directory.CreateDirectory(System.IO.Path.GetDirectoryName(crashFile)!);
+            System.IO.File.AppendAllText(crashFile, crashLog + "\n---\n");
+        }
+        catch { }
+        
         Log.Error(e.Exception, "Dispatcher exception");
-        MessageBox.Show($"Error:\n\n{e.Exception.Message}", "RTSP VirtualCam - Error", 
-            MessageBoxButton.OK, MessageBoxImage.Error);
+        MessageBox.Show($"Error:\n\n{e.Exception.Message}\n\nStack: {e.Exception.StackTrace?.Substring(0, Math.Min(500, e.Exception.StackTrace?.Length ?? 0))}", 
+            "RTSP VirtualCam - Error", MessageBoxButton.OK, MessageBoxImage.Error);
         e.Handled = true;
     }
     
