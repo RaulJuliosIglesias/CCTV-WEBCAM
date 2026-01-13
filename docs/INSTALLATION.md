@@ -67,10 +67,11 @@ dotnet publish src/RTSPVirtualCam `
 
 | Component | Minimum | Recommended |
 |-----------|---------|-------------|
-| OS | Windows 11 Build 22000 | Windows 11 22H2+ |
+| OS | Windows 10 1809+ or Windows 11 Build 22000 | Windows 11 22H2+ |
 | RAM | 2 GB | 4 GB |
 | CPU | Any x64 | Multi-core |
 | Network | 10 Mbps | 100 Mbps |
+| Admin Rights | Required for Windows 10 driver only | Not required for Windows 11 |
 
 ---
 
@@ -135,7 +136,8 @@ dotnet publish src/RTSPVirtualCam `
 
 | Componente | Mínimo | Recomendado |
 |------------|--------|-------------|
-| SO | Windows 11 Build 22000 | Windows 11 22H2+ |
+| SO | Windows 10 1809+ o Windows 11 Build 22000 | Windows 11 22H2+ |
 | RAM | 2 GB | 4 GB |
 | CPU | Cualquier x64 | Multi-núcleo |
 | Red | 10 Mbps | 100 Mbps |
+| Admin Rights | Requerido solo para Windows 10 | No requerido para Windows 11 |

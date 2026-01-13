@@ -26,7 +26,7 @@
 |----------------|-------------|
 | 🔌 **Conexión Fácil** | Solo pega tu URL RTSP y haz clic en "Virtualizar" |
 | ⚡ **Baja Latencia** | Optimizado para streaming en tiempo real con buffer de 300ms |
-| 🚫 **Sin Drivers** | Usa la API nativa MFCreateVirtualCamera de Windows 11 |
+| 🪟 **Windows 10/11 Soporte** | Windows 11: API Nativa | Windows 10: Instalación automática de driver |
 | 📺 **Universal** | Funciona con Zoom, Teams, Meet, OBS, Discord y más |
 | 🎨 **UI Moderna** | Interfaz WPF limpia con indicadores de estado |
 | 💾 **Historial de URLs** | Recuerda tus últimas 10 conexiones |
@@ -37,11 +37,30 @@
 
 | Requisito | Detalles |
 |-----------|----------|
-| **Sistema Operativo** | Windows 11 (Build 22000+) |
+| **Sistema Operativo** | Windows 10 (1809+) o Windows 11 (Build 22000+) |
 | **Runtime** | .NET 8 (incluido en versión portable) |
 | **Red** | Acceso al stream RTSP de la cámara |
+| **Permisos de Admin** | Requeridos solo para instalación de driver en Windows 10 |
 
-> ⚠️ **Nota**: Windows 10 no está soportado debido a la falta de API de cámara virtual.
+---
+
+## 🖥️ Soporte de Sistemas Operativos
+
+### Windows 11 (Build 22000+)
+✅ **Soporte Nativo de Cámara Virtual**
+- Usa la API integrada `MFCreateVirtualCamera` de Windows 11
+- No requiere drivers adicionales
+- Instalación cero - solo ejecutar y virtualizar
+
+### Windows 10 (Versión 1809+)
+✅ **Soportado con Instalación Automática de Driver**
+- La aplicación incluye **instalación de driver con un clic**
+- Usa el driver OBS Virtual Camera (incluido)
+- **Botón Instalar**: Registra el driver de cámara virtual automáticamente
+- **Botón Desinstalar**: Elimina el driver limpiamente
+- Permisos de administrador requeridos solo para instalación del driver
+
+> 💡 **Configuración Windows 10**: ¡Solo haz clic en "Instalar" en la sección "VIRTUAL CAMERA DRIVER" - no se necesitan descargas manuales!
 
 ---
 
@@ -86,11 +105,17 @@ Haz clic en **▶ Preview** para verificar que el stream funciona correctamente.
 
 ### Paso 3: Virtualizar
 
-Haz clic en **📹 Virtualize** para crear la cámara virtual.
+**Para Usuarios de Windows 11:**
+Haz clic en **📹 Virtualize** para crear la cámara virtual instantáneamente.
+
+**Para Usuarios de Windows 10:**
+1. Si no está instalado, haz clic en **🔧 Install** en la sección "VIRTUAL CAMERA DRIVER"
+2. Acepta el prompt de administrador (configuración de una sola vez)
+3. Haz clic en **📹 Virtualize** para crear la cámara virtual
 
 ### Paso 4: Usar en Aplicaciones
 
-Selecciona **"RTSP VirtualCam"** como tu cámara en cualquier aplicación de videoconferencia.
+Selecciona **"OBS Virtual Camera"** (Windows 10) o **"RTSP VirtualCam"** (Windows 11) como tu cámara en cualquier aplicación de videoconferencia.
 
 ---
 

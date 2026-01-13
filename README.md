@@ -28,7 +28,7 @@
 |---------|-------------|
 | 🔌 **Easy Connection** | Just paste your RTSP URL and click "Virtualize" |
 | ⚡ **Low Latency** | Optimized for real-time streaming with 300ms buffer |
-| 🚫 **No Drivers** | Uses native Windows 11 MFCreateVirtualCamera API |
+| 🪟 **Windows 10/11 Support** | Windows 11: Native API | Windows 10: One-click driver install |
 | 📺 **Universal** | Works with Zoom, Teams, Meet, OBS, Discord, and more |
 | 🎨 **Modern UI** | Clean WPF interface with status indicators |
 | 💾 **URL History** | Remembers your last 10 connections |
@@ -56,11 +56,30 @@
 
 | Requirement | Details |
 |-------------|---------|
-| **Operating System** | Windows 11 (Build 22000+) |
+| **Operating System** | Windows 10 (1809+) or Windows 11 (Build 22000+) |
 | **Runtime** | .NET 8 (included in portable version) |
 | **Network** | Access to RTSP camera stream |
+| **Admin Rights** | Required for Windows 10 driver installation only |
 
-> ⚠️ **Note**: Windows 10 is not supported due to missing virtual camera API.
+---
+
+## 🖥️ Operating System Support
+
+### Windows 11 (Build 22000+)
+✅ **Native Virtual Camera Support**
+- Uses Windows 11's built-in `MFCreateVirtualCamera` API
+- No additional drivers required
+- Zero installation - just run and virtualize
+
+### Windows 10 (Version 1809+)
+✅ **Supported with Automatic Driver Installation**
+- Application includes **one-click driver installation**
+- Uses OBS Virtual Camera driver (included)
+- **Install Button**: Registers the virtual camera driver automatically
+- **Uninstall Button**: Removes the driver cleanly
+- Admin rights required only for driver installation
+
+> 💡 **Windows 10 Setup**: Just click "Install" in the "VIRTUAL CAMERA DRIVER" section - no manual downloads needed!
 
 ---
 
@@ -121,11 +140,17 @@ Click **▶ Preview** to verify the stream is working correctly.
 
 ### Step 3: Virtualize
 
-Click **📹 Virtualize** to create the virtual camera.
+**For Windows 11 Users:**
+Click **📹 Virtualize** to create the virtual camera instantly.
+
+**For Windows 10 Users:**
+1. If not installed, click **🔧 Install** in the "VIRTUAL CAMERA DRIVER" section
+2. Approve the admin prompt (one-time setup)
+3. Click **📹 Virtualize** to create the virtual camera
 
 ### Step 4: Use in Apps
 
-Select **"RTSP VirtualCam"** as your camera in any video conferencing app.
+Select **"OBS Virtual Camera"** (Windows 10) or **"RTSP VirtualCam"** (Windows 11) as your camera in any video conferencing app.
 
 ---
 
@@ -302,11 +327,11 @@ RTSPVirtualCam/
 - [ ] System tray support
 - [ ] Dark mode theme
 
-### 🔮 v1.2 - Advanced
+### 🔄 v1.2 - Advanced
 - [ ] Multiple simultaneous cameras
 - [ ] PTZ control integration
 - [ ] Hardware acceleration (DXVA2)
-- [ ] Windows 10 support (DirectShow)
+- [x] Windows 10 support (OBS Virtual Camera driver)
 - [ ] Installer package
 
 ---
@@ -318,9 +343,16 @@ RTSPVirtualCam/
 <details>
 <summary><b>Camera not appearing in video apps</b></summary>
 
+**Windows 11 Users:**
 1. Restart the video conferencing application
 2. Check if Windows Camera privacy settings allow access
 3. Verify Windows 11 Build 22000 or higher
+
+**Windows 10 Users:**
+1. Ensure driver is installed (check "VIRTUAL CAMERA DRIVER" section)
+2. Restart the video conferencing application
+3. Look for "OBS Virtual Camera" (not "RTSP VirtualCam")
+4. If driver missing, click "Install" button in the app
 </details>
 
 <details>
