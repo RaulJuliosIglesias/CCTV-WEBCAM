@@ -17,6 +17,7 @@ public partial class MainViewModel : ObservableObject
 {
     private readonly IRtspService _rtspService;
     private readonly IVirtualCameraService _virtualCameraService;
+    private readonly HikvisionPtzService _ptzService;
     private readonly StringBuilder _logBuilder = new();
     
     // Connection fields
@@ -31,6 +32,13 @@ public partial class MainViewModel : ObservableObject
     
     [ObservableProperty]
     private string _password = string.Empty;
+    
+    // PTZ Credentials (optional - for PTZ control only)
+    [ObservableProperty]
+    private string _ptzUsername = string.Empty;
+    
+    [ObservableProperty]
+    private string _ptzPassword = string.Empty;
     
     [ObservableProperty]
     private CameraBrand _selectedBrand = CameraBrand.Hikvision;
@@ -143,6 +151,7 @@ public partial class MainViewModel : ObservableObject
     {
         _rtspService = rtspService;
         _virtualCameraService = virtualCameraService;
+        _ptzService = new HikvisionPtzService();
         
         _rtspService.ConnectionStateChanged += OnConnectionStateChanged;
         _virtualCameraService.StateChanged += OnVirtualCameraStateChanged;
@@ -152,6 +161,9 @@ public partial class MainViewModel : ObservableObject
         {
             rtspSvc.OnPreviewFrame += OnPreviewFrameReceived;
         }
+        
+        // Subscribe to PTZ service logs
+        _ptzService.OnLog += (msg) => AddLog(msg);
         
         // Initial log
         AddLog("Application started");
@@ -849,118 +861,222 @@ public partial class MainViewModel : ObservableObject
     }
     
     // ═══════════════════════════════════════
-    // PTZ CONTROLS
+    // PTZ CONTROLS - REAL SDK IMPLEMENTATION
     // ═══════════════════════════════════════
     
     [RelayCommand]
-    private async Task PtzUpAsync() => await SendPtzCommandAsync("up");
+    private async Task PtzUpAsync() => await ExecutePtzCommandAsync("up");
     
     [RelayCommand]
-    private async Task PtzDownAsync() => await SendPtzCommandAsync("down");
+    private async Task PtzDownAsync() => await ExecutePtzCommandAsync("down");
     
     [RelayCommand]
-    private async Task PtzLeftAsync() => await SendPtzCommandAsync("left");
+    private async Task PtzLeftAsync() => await ExecutePtzCommandAsync("left");
     
     [RelayCommand]
-    private async Task PtzRightAsync() => await SendPtzCommandAsync("right");
+    private async Task PtzRightAsync() => await ExecutePtzCommandAsync("right");
     
     [RelayCommand]
-    private async Task PtzHomeAsync() => await SendPtzCommandAsync("home");
+    private async Task PtzHomeAsync() => await ExecutePtzCommandAsync("home");
     
     [RelayCommand]
-    private async Task PtzZoomInAsync() => await SendPtzCommandAsync("zoomin");
+    private async Task PtzZoomInAsync() => await ExecutePtzCommandAsync("zoomin");
     
     [RelayCommand]
-    private async Task PtzZoomOutAsync() => await SendPtzCommandAsync("zoomout");
+    private async Task PtzZoomOutAsync() => await ExecutePtzCommandAsync("zoomout");
     
-    private async Task SendPtzCommandAsync(string direction)
+    private async Task ExecutePtzCommandAsync(string command)
     {
-        try
+        await Task.Run(async () =>
         {
-            // Build PTZ API URL based on camera brand
-            string ptzUrl = SelectedBrand switch
+            try
             {
-                CameraBrand.Hikvision => BuildHikvisionPtzUrl(direction),
-                CameraBrand.Dahua => BuildDahuaPtzUrl(direction),
-                _ => BuildGenericOnvifPtzUrl(direction)
-            };
-            
-            if (string.IsNullOrEmpty(ptzUrl))
-            {
-                AddLog($"⚠️ PTZ not supported for {SelectedBrand}");
-                return;
+                // Use HTTP ISAPI for better compatibility
+                await SendPtzViaHttpAsync(command);
             }
-            
-            using var client = new System.Net.Http.HttpClient();
-            client.Timeout = TimeSpan.FromSeconds(5);
-            
-            // Add authentication
-            var credentials = Convert.ToBase64String(System.Text.Encoding.ASCII.GetBytes($"{Username}:{Password}"));
-            client.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Basic", credentials);
-            
-            var response = await client.PutAsync(ptzUrl, new System.Net.Http.StringContent(GetPtzXmlPayload(direction), System.Text.Encoding.UTF8, "application/xml"));
-            
-            if (response.IsSuccessStatusCode)
+            catch (Exception ex)
             {
-                AddLog($"🎮 PTZ: {direction}");
+                AddLog($"❌ PTZ error: {ex.Message}");
             }
-            else
-            {
-                AddLog($"⚠️ PTZ failed: {response.StatusCode}");
-            }
-            
-            // Stop movement after short delay (continuous mode)
-            await Task.Delay(300);
-            await StopPtzMovementAsync();
-        }
-        catch (Exception ex)
-        {
-            AddLog($"⚠️ PTZ error: {ex.Message}");
-        }
+        });
     }
     
-    private async Task StopPtzMovementAsync()
+    private async Task SendPtzViaHttpAsync(string command)
     {
         try
         {
-            string stopUrl = SelectedBrand switch
+            // Use PTZ credentials if provided, otherwise fallback to RTSP credentials
+            string ptzUser = string.IsNullOrWhiteSpace(PtzUsername) ? Username : PtzUsername;
+            string ptzPass = string.IsNullOrWhiteSpace(PtzPassword) ? Password : PtzPassword;
+            
+            // Use HttpClientHandler with credentials for Digest authentication
+            var handler = new System.Net.Http.HttpClientHandler
             {
-                CameraBrand.Hikvision => $"http://{IpAddress}/ISAPI/PTZCtrl/channels/1/continuous",
-                CameraBrand.Dahua => $"http://{IpAddress}/cgi-bin/ptz.cgi?action=stop&channel=0",
-                _ => null
+                Credentials = new System.Net.NetworkCredential(ptzUser, ptzPass),
+                PreAuthenticate = true
             };
             
-            if (stopUrl == null) return;
+            using var client = new System.Net.Http.HttpClient(handler);
+            client.Timeout = TimeSpan.FromSeconds(5);
             
-            using var client = new System.Net.Http.HttpClient();
-            client.Timeout = TimeSpan.FromSeconds(3);
-            var credentials = Convert.ToBase64String(System.Text.Encoding.ASCII.GetBytes($"{Username}:{Password}"));
-            client.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Basic", credentials);
+            string url;
+            System.Net.Http.HttpContent? content = null;
             
             if (SelectedBrand == CameraBrand.Hikvision)
             {
-                await client.PutAsync(stopUrl, new System.Net.Http.StringContent(
-                    "<PTZData><pan>0</pan><tilt>0</tilt><zoom>0</zoom></PTZData>",
-                    System.Text.Encoding.UTF8, "application/xml"));
+                // Hikvision ISAPI PTZ control
+                var (pan, tilt, zoom) = GetPtzValues(command);
+                
+                url = $"http://{IpAddress}/ISAPI/PTZCtrl/channels/1/continuous";
+                string xmlPayload = $@"<?xml version=""1.0"" encoding=""UTF-8""?>
+<PTZData>
+    <pan>{pan}</pan>
+    <tilt>{tilt}</tilt>
+    <zoom>{zoom}</zoom>
+</PTZData>";
+                content = new System.Net.Http.StringContent(xmlPayload, System.Text.Encoding.UTF8, "application/xml");
+                
+                AddLog($"🎮 PTZ: {command} (pan={pan}, tilt={tilt}, zoom={zoom})");
+                
+                var response = await client.PutAsync(url, content);
+                
+                if (response.IsSuccessStatusCode)
+                {
+                    AddLog($"✅ PTZ command sent successfully");
+                    
+                    // Auto-stop after 300ms
+                    await Task.Delay(300);
+                    await StopPtzViaHttpAsync();
+                }
+                else if (response.StatusCode == System.Net.HttpStatusCode.Unauthorized)
+                {
+                    var errorBody = await response.Content.ReadAsStringAsync();
+                    AddLog($"❌ PTZ FAILED: 401 Unauthorized");
+                    AddLog($"   Usuario usado: '{ptzUser}'");
+                    AddLog($"   URL: {url}");
+                    if (!string.IsNullOrEmpty(errorBody))
+                    {
+                        AddLog($"   Respuesta: {errorBody.Substring(0, Math.Min(200, errorBody.Length))}");
+                    }
+                    AddLog($"");
+                    AddLog($"⚠️ PROBLEMA:");
+                    AddLog($"   '{ptzUser}' NO tiene rol Administrator O permisos PTZ");
+                    AddLog($"");
+                    AddLog($"📝 SOLUCIÓN RÁPIDA:");
+                    AddLog($"   1. Ve a http://{IpAddress} → User Management");
+                    AddLog($"   2. Modifica usuario 'admin_ptz':");
+                    AddLog($"      • Cambiar Level de 'Operator' a 'Administrator'");
+                    AddLog($"      • Guardar cambios");
+                    AddLog($"   3. Llena campos PTZ Username/Password en la app");
+                    AddLog($"      PTZ Username: admin_ptz");
+                    AddLog($"      PTZ Password: (tu contraseña)");
+                }
+                else if (response.StatusCode == System.Net.HttpStatusCode.Forbidden)
+                {
+                    AddLog($"❌ PTZ FAILED: Forbidden (403)");
+                    AddLog($"   El usuario tiene login pero NO permisos PTZ");
+                    AddLog($"   Verifica permisos en Configuration → User Management");
+                }
+                else
+                {
+                    var errorBody = await response.Content.ReadAsStringAsync();
+                    AddLog($"⚠️ PTZ failed: {response.StatusCode}");
+                    AddLog($"   Response: {errorBody}");
+                    
+                    // Check if error mentions permissions
+                    if (errorBody.Contains("permission", StringComparison.OrdinalIgnoreCase) ||
+                        errorBody.Contains("forbidden", StringComparison.OrdinalIgnoreCase))
+                    {
+                        AddLog($"");
+                        AddLog($"💡 Problema de permisos detectado.");
+                        AddLog($"   Usuario necesita rol 'Administrator' con PTZ habilitado");
+                    }
+                }
             }
-            else
+            else if (SelectedBrand == CameraBrand.Dahua)
             {
-                await client.GetAsync(stopUrl);
+                // Dahua CGI PTZ control
+                string action = GetDahuaPtzAction(command);
+                url = $"http://{IpAddress}/cgi-bin/ptz.cgi?action={action}&channel=0&code=0&arg1=0&arg2=1&arg3=0";
+                
+                AddLog($"🎮 PTZ: {command}");
+                
+                var response = await client.GetAsync(url);
+                
+                if (response.IsSuccessStatusCode)
+                {
+                    AddLog($"✅ PTZ command sent");
+                    await Task.Delay(300);
+                    await client.GetAsync($"http://{IpAddress}/cgi-bin/ptz.cgi?action=stop&channel=0");
+                }
+                else
+                {
+                    AddLog($"⚠️ PTZ failed: {response.StatusCode}");
+                }
+            }
+        }
+        catch (System.Net.Http.HttpRequestException ex)
+        {
+            AddLog($"❌ PTZ connection error: {ex.Message}");
+            AddLog($"💡 Verify camera IP: {IpAddress}");
+        }
+        catch (Exception ex)
+        {
+            AddLog($"❌ PTZ error: {ex.Message}");
+        }
+    }
+    
+    private async Task StopPtzViaHttpAsync()
+    {
+        try
+        {
+            string ptzUser = string.IsNullOrWhiteSpace(PtzUsername) ? Username : PtzUsername;
+            string ptzPass = string.IsNullOrWhiteSpace(PtzPassword) ? Password : PtzPassword;
+            
+            var handler = new System.Net.Http.HttpClientHandler
+            {
+                Credentials = new System.Net.NetworkCredential(ptzUser, ptzPass),
+                PreAuthenticate = true
+            };
+            
+            using var client = new System.Net.Http.HttpClient(handler);
+            client.Timeout = TimeSpan.FromSeconds(3);
+            
+            if (SelectedBrand == CameraBrand.Hikvision)
+            {
+                string url = $"http://{IpAddress}/ISAPI/PTZCtrl/channels/1/continuous";
+                string xmlPayload = @"<?xml version=""1.0"" encoding=""UTF-8""?>
+<PTZData>
+    <pan>0</pan>
+    <tilt>0</tilt>
+    <zoom>0</zoom>
+</PTZData>";
+                var content = new System.Net.Http.StringContent(xmlPayload, System.Text.Encoding.UTF8, "application/xml");
+                await client.PutAsync(url, content);
             }
         }
         catch { }
     }
     
-    private string BuildHikvisionPtzUrl(string direction)
+    private (int pan, int tilt, int zoom) GetPtzValues(string command)
     {
-        return direction == "home" 
-            ? $"http://{IpAddress}/ISAPI/PTZCtrl/channels/1/homeposition/goto"
-            : $"http://{IpAddress}/ISAPI/PTZCtrl/channels/1/continuous";
+        int speed = 50; // 0-100
+        
+        return command.ToLower() switch
+        {
+            "up" => (0, speed, 0),
+            "down" => (0, -speed, 0),
+            "left" => (-speed, 0, 0),
+            "right" => (speed, 0, 0),
+            "zoomin" => (0, 0, speed),
+            "zoomout" => (0, 0, -speed),
+            _ => (0, 0, 0)
+        };
     }
     
-    private string BuildDahuaPtzUrl(string direction)
+    private string GetDahuaPtzAction(string command)
     {
-        string action = direction switch
+        return command.ToLower() switch
         {
             "up" => "start&code=Up",
             "down" => "start&code=Down",
@@ -968,34 +1084,9 @@ public partial class MainViewModel : ObservableObject
             "right" => "start&code=Right",
             "zoomin" => "start&code=ZoomTele",
             "zoomout" => "start&code=ZoomWide",
-            "home" => "start&code=GotoPreset&arg1=0&arg2=1",
+            "home" => "start&code=GotoPreset&arg1=1",
             _ => "stop"
         };
-        return $"http://{IpAddress}/cgi-bin/ptz.cgi?action={action}&channel=0&arg1=0&arg2=1&arg3=0";
-    }
-    
-    private string? BuildGenericOnvifPtzUrl(string direction)
-    {
-        // Generic ONVIF not implemented - would require SOAP
-        return null;
-    }
-    
-    private string GetPtzXmlPayload(string direction)
-    {
-        int pan = 0, tilt = 0, zoom = 0;
-        int speed = 50;
-        
-        switch (direction)
-        {
-            case "up": tilt = speed; break;
-            case "down": tilt = -speed; break;
-            case "left": pan = -speed; break;
-            case "right": pan = speed; break;
-            case "zoomin": zoom = speed; break;
-            case "zoomout": zoom = -speed; break;
-        }
-        
-        return $"<PTZData><pan>{pan}</pan><tilt>{tilt}</tilt><zoom>{zoom}</zoom></PTZData>";
     }
     
     private void OnConnectionStateChanged(object? sender, RtspConnectionEventArgs e)

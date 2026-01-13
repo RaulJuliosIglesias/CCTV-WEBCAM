@@ -352,6 +352,24 @@
                                 </StackPanel>
                             </Grid>
                             
+                            <!-- PTZ Credentials (Optional) -->
+                            <TextBlock Text="PTZ CONTROL (OPTIONAL)" FontSize="8" Foreground="#585B70" FontWeight="Bold" Margin="0,8,0,4"/>
+                            <TextBlock Text="Solo si PTZ requiere credenciales diferentes" FontSize="8" Foreground="#585B70" Margin="0,0,0,6" TextWrapping="Wrap"/>
+                            
+                            <Grid Margin="0,0,0,8">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/><ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <StackPanel Grid.Column="0" Margin="0,0,4,0">
+                                    <TextBlock Text="PTZ Username" FontSize="9" Foreground="#6C7086" Margin="0,0,0,2"/>
+                                    <TextBox Text="{Binding PtzUsername, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource ModernTextBox}" Foreground="#89B4FA"/>
+                                </StackPanel>
+                                <StackPanel Grid.Column="1" Margin="4,0,0,0">
+                                    <TextBlock Text="PTZ Password" FontSize="9" Foreground="#6C7086" Margin="0,0,0,2"/>
+                                    <TextBox Text="{Binding PtzPassword, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource ModernTextBox}" Foreground="#89B4FA"/>
+                                </StackPanel>
+                            </Grid>
+                            
                             <Grid Margin="0,0,0,8">
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="*"/><ColumnDefinition Width="70"/>
