@@ -22,12 +22,25 @@ public class RtspService : IRtspService, IDisposable
     private bool _virtualCamEnabled;
     private long _frameCount;
     
+    // Camera settings
+    private bool _flipHorizontal;
+    private bool _flipVertical;
+    private int _brightness; // -100 to 100
+    private int _contrast;   // -100 to 100
+    
     public event EventHandler<RtspConnectionEventArgs>? ConnectionStateChanged;
     public event EventHandler<FrameEventArgs>? FrameReceived;
     public event Action<string>? OnLog;
+    public event Action<byte[], int, int>? OnPreviewFrame; // BGRA frame for UI preview
     
     public bool IsConnected => _mediaPlayer?.IsPlaying ?? false;
     public bool IsVirtualCamActive => _obsOutput?.IsRunning ?? false;
+    
+    // Camera settings properties
+    public bool FlipHorizontal { get => _flipHorizontal; set => _flipHorizontal = value; }
+    public bool FlipVertical { get => _flipVertical; set => _flipVertical = value; }
+    public int Brightness { get => _brightness; set => _brightness = Math.Clamp(value, -100, 100); }
+    public int Contrast { get => _contrast; set => _contrast = Math.Clamp(value, -100, 100); }
     
     public int Width
     {
@@ -273,6 +286,23 @@ public class RtspService : IRtspService, IDisposable
             byte[] bgraData = new byte[size];
             Marshal.Copy(_frameBuffer, bgraData, 0, size);
             
+            // Apply camera effects
+            if (_flipHorizontal || _flipVertical)
+            {
+                bgraData = ApplyFlip(bgraData, _frameWidth, _frameHeight, _flipHorizontal, _flipVertical);
+            }
+            
+            if (_brightness != 0 || _contrast != 0)
+            {
+                ApplyBrightnessContrast(bgraData, _brightness, _contrast);
+            }
+            
+            // Send frame to UI preview (every 2nd frame to reduce load)
+            if (_frameCount % 2 == 0)
+            {
+                OnPreviewFrame?.Invoke(bgraData, _frameWidth, _frameHeight);
+            }
+            
             // Convert BGRA to NV12 and send to OBS
             byte[] nv12Data = OBSVirtualCamOutput.BgraToNv12(bgraData, _frameWidth, _frameHeight);
             
@@ -292,6 +322,54 @@ public class RtspService : IRtspService, IDisposable
             if (_frameCount % 100 == 0)
             {
                 OnLog?.Invoke($"⚠️ Frame error: {ex.Message}");
+            }
+        }
+    }
+    
+    private static byte[] ApplyFlip(byte[] bgra, int width, int height, bool flipH, bool flipV)
+    {
+        byte[] result = new byte[bgra.Length];
+        int stride = width * 4;
+        
+        for (int y = 0; y < height; y++)
+        {
+            int srcY = flipV ? (height - 1 - y) : y;
+            
+            for (int x = 0; x < width; x++)
+            {
+                int srcX = flipH ? (width - 1 - x) : x;
+                
+                int srcIdx = srcY * stride + srcX * 4;
+                int dstIdx = y * stride + x * 4;
+                
+                result[dstIdx] = bgra[srcIdx];
+                result[dstIdx + 1] = bgra[srcIdx + 1];
+                result[dstIdx + 2] = bgra[srcIdx + 2];
+                result[dstIdx + 3] = bgra[srcIdx + 3];
+            }
+        }
+        
+        return result;
+    }
+    
+    private static void ApplyBrightnessContrast(byte[] bgra, int brightness, int contrast)
+    {
+        float brightnessFactor = brightness / 100f * 255f;
+        float contrastFactor = (100f + contrast) / 100f;
+        
+        for (int i = 0; i < bgra.Length; i += 4)
+        {
+            for (int c = 0; c < 3; c++) // B, G, R channels
+            {
+                float value = bgra[i + c];
+                
+                // Apply contrast (centered at 128)
+                value = (value - 128) * contrastFactor + 128;
+                
+                // Apply brightness
+                value += brightnessFactor;
+                
+                bgra[i + c] = (byte)Math.Clamp(value, 0, 255);
             }
         }
     }

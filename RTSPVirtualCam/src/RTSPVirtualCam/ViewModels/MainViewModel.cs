@@ -103,6 +103,23 @@ public partial class MainViewModel : ObservableObject
     [ObservableProperty]
     private bool _isInstallingDriver;
     
+    // Camera settings
+    [ObservableProperty]
+    private bool _flipHorizontal;
+    
+    [ObservableProperty]
+    private bool _flipVertical;
+    
+    [ObservableProperty]
+    private int _brightness;
+    
+    [ObservableProperty]
+    private int _contrast;
+    
+    // Preview bitmap
+    [ObservableProperty]
+    private System.Windows.Media.Imaging.WriteableBitmap? _previewBitmap;
+    
     // Collections
     public ObservableCollection<CameraBrand> Brands { get; } = new(Enum.GetValues<CameraBrand>());
     public ObservableCollection<StreamType> Streams { get; } = new(Enum.GetValues<StreamType>());
@@ -117,6 +134,12 @@ public partial class MainViewModel : ObservableObject
         _rtspService.ConnectionStateChanged += OnConnectionStateChanged;
         _virtualCameraService.StateChanged += OnVirtualCameraStateChanged;
         
+        // Subscribe to preview frames
+        if (_rtspService is RtspService rtspSvc)
+        {
+            rtspSvc.OnPreviewFrame += OnPreviewFrameReceived;
+        }
+        
         // Initial log
         AddLog("Application started");
         AddLog($"Base directory: {AppContext.BaseDirectory}");
@@ -126,6 +149,52 @@ public partial class MainViewModel : ObservableObject
         
         // Generate initial URL
         UpdateGeneratedUrl();
+    }
+    
+    private void OnPreviewFrameReceived(byte[] bgra, int width, int height)
+    {
+        try
+        {
+            // Update bitmap on UI thread
+            System.Windows.Application.Current?.Dispatcher.BeginInvoke(() =>
+            {
+                if (PreviewBitmap == null || PreviewBitmap.PixelWidth != width || PreviewBitmap.PixelHeight != height)
+                {
+                    PreviewBitmap = new System.Windows.Media.Imaging.WriteableBitmap(
+                        width, height, 96, 96,
+                        System.Windows.Media.PixelFormats.Bgra32, null);
+                }
+                
+                PreviewBitmap.WritePixels(
+                    new System.Windows.Int32Rect(0, 0, width, height),
+                    bgra, width * 4, 0);
+            });
+        }
+        catch { }
+    }
+    
+    partial void OnFlipHorizontalChanged(bool value)
+    {
+        if (_rtspService is RtspService rtspSvc)
+            rtspSvc.FlipHorizontal = value;
+    }
+    
+    partial void OnFlipVerticalChanged(bool value)
+    {
+        if (_rtspService is RtspService rtspSvc)
+            rtspSvc.FlipVertical = value;
+    }
+    
+    partial void OnBrightnessChanged(int value)
+    {
+        if (_rtspService is RtspService rtspSvc)
+            rtspSvc.Brightness = value;
+    }
+    
+    partial void OnContrastChanged(int value)
+    {
+        if (_rtspService is RtspService rtspSvc)
+            rtspSvc.Contrast = value;
     }
     
     private static readonly string LogFilePath = System.IO.Path.Combine(

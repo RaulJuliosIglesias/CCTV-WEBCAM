@@ -390,55 +390,67 @@
             <!-- Preview Area -->
             <Border Grid.Row="0" Background="#11111B">
                 <Grid>
-                    <!-- VLC Video View -->
+                    <!-- VLC Video View (before virtualization) -->
                     <vlc:VideoView x:Name="VideoView" 
                                    Background="Transparent"
                                    Visibility="{Binding IsConnected, Converter={StaticResource BoolToVisibility}}"/>
+                    
+                    <!-- Software Preview (during virtualization) -->
+                    <Image Source="{Binding PreviewBitmap}" 
+                           Stretch="Uniform"
+                           Visibility="{Binding IsVirtualized, Converter={StaticResource BoolToVisibility}}"/>
                     
                     <!-- No Signal Placeholder -->
                     <StackPanel VerticalAlignment="Center" 
                                 HorizontalAlignment="Center"
                                 Visibility="{Binding IsConnected, Converter={StaticResource InverseBoolToVisibility}}">
-                        <TextBlock Text="📹" 
-                                   FontSize="64" 
-                                   HorizontalAlignment="Center"
-                                   Foreground="#45475A"/>
-                        <TextBlock Text="No Preview" 
-                                   FontSize="20" 
-                                   Foreground="#585B70"
-                                   FontWeight="SemiBold"
-                                   HorizontalAlignment="Center"
-                                   Margin="0,15,0,0"/>
-                        <TextBlock Text="Configure connection and click Preview" 
-                                   FontSize="12" 
-                                   Foreground="#45475A"
-                                   HorizontalAlignment="Center"
-                                   Margin="0,8,0,0"/>
+                        <TextBlock Text="📹" FontSize="64" HorizontalAlignment="Center" Foreground="#45475A"/>
+                        <TextBlock Text="No Preview" FontSize="20" Foreground="#585B70" FontWeight="SemiBold" HorizontalAlignment="Center" Margin="0,15,0,0"/>
+                        <TextBlock Text="Configure connection and click Preview" FontSize="12" Foreground="#45475A" HorizontalAlignment="Center" Margin="0,8,0,0"/>
                     </StackPanel>
                     
                     <!-- Virtualized Indicator -->
-                    <Border VerticalAlignment="Top" 
-                            HorizontalAlignment="Left"
-                            Background="#A6E3A1"
-                            CornerRadius="0,0,8,0"
-                            Padding="15,8"
+                    <Border VerticalAlignment="Top" HorizontalAlignment="Left" Background="#A6E3A1" CornerRadius="0,0,8,0" Padding="15,8"
                             Visibility="{Binding IsVirtualized, Converter={StaticResource BoolToVisibility}}">
-                        <TextBlock Text="🔴 LIVE - Virtual Camera Active" 
-                                   Foreground="#1E1E2E" 
-                                   FontSize="12"
-                                   FontWeight="SemiBold"/>
+                        <TextBlock Text="🔴 LIVE - Virtual Camera Active" Foreground="#1E1E2E" FontSize="12" FontWeight="SemiBold"/>
+                    </Border>
+                    
+                    <!-- Camera Settings Overlay -->
+                    <Border VerticalAlignment="Bottom" HorizontalAlignment="Stretch" Background="#DD1E1E2E" 
+                            Visibility="{Binding IsVirtualized, Converter={StaticResource BoolToVisibility}}">
+                        <Grid Margin="15,10">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                            </Grid.RowDefinitions>
+                            
+                            <!-- Flip Controls -->
+                            <StackPanel Grid.Column="0" Grid.Row="0" Orientation="Horizontal" Margin="0,0,20,8">
+                                <CheckBox Content="↔️ Flip H" IsChecked="{Binding FlipHorizontal}" Foreground="#CDD6F4" VerticalAlignment="Center" Margin="0,0,15,0"/>
+                                <CheckBox Content="↕️ Flip V" IsChecked="{Binding FlipVertical}" Foreground="#CDD6F4" VerticalAlignment="Center"/>
+                            </StackPanel>
+                            
+                            <!-- Brightness -->
+                            <TextBlock Grid.Column="0" Grid.Row="1" Text="☀️ Brightness" Foreground="#A6ADC8" FontSize="11" VerticalAlignment="Center" Margin="0,0,10,0"/>
+                            <Slider Grid.Column="1" Grid.Row="1" Minimum="-100" Maximum="100" Value="{Binding Brightness}" VerticalAlignment="Center" Margin="0,0,20,0"/>
+                            
+                            <!-- Contrast -->
+                            <TextBlock Grid.Column="2" Grid.Row="1" Text="🎨 Contrast" Foreground="#A6ADC8" FontSize="11" VerticalAlignment="Center" Margin="0,0,10,0"/>
+                            <Slider Grid.Column="3" Grid.Row="1" Minimum="-100" Maximum="100" Value="{Binding Contrast}" VerticalAlignment="Center"/>
+                        </Grid>
                     </Border>
                     
                     <!-- Connecting Overlay -->
-                    <Border Background="#CC11111B"
-                            Visibility="{Binding IsConnecting, Converter={StaticResource BoolToVisibility}}">
+                    <Border Background="#CC11111B" Visibility="{Binding IsConnecting, Converter={StaticResource BoolToVisibility}}">
                         <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
                             <TextBlock Text="⏳" FontSize="48" HorizontalAlignment="Center"/>
-                            <TextBlock Text="Connecting..." 
-                                       FontSize="16" 
-                                       Foreground="#CDD6F4"
-                                       HorizontalAlignment="Center"
-                                       Margin="0,10,0,0"/>
+                            <TextBlock Text="Connecting..." FontSize="16" Foreground="#CDD6F4" HorizontalAlignment="Center" Margin="0,10,0,0"/>
                         </StackPanel>
                     </Border>
                 </Grid>
