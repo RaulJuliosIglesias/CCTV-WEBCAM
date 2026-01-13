@@ -495,7 +495,7 @@
                         </Expander.Header>
                         <StackPanel>
                             <!-- SUB-EXPANDER 1: Preview & Virtual Controls -->
-                            <Expander Style="{StaticResource SectionExpander}" IsExpanded="True" Margin="0,0,0,5">
+                            <Expander Style="{StaticResource SectionExpander}" IsExpanded="True" Margin="0,0,0,8">
                                 <Expander.Header>
                                     <TextBlock Text="📺 PREVIEW &amp; VIRTUAL OUTPUT" Foreground="#A6E3A1" FontWeight="SemiBold" FontSize="10"/>
                                 </Expander.Header>
@@ -557,7 +557,7 @@
                             </Expander>
                             
                             <!-- SUB-EXPANDER 2: PTZ Control -->
-                            <Expander Style="{StaticResource SectionExpander}" IsExpanded="False" Margin="0,0,0,0">
+                            <Expander Style="{StaticResource SectionExpander}" IsExpanded="False" Margin="0,0,0,8">
                                 <Expander.Header>
                                     <TextBlock Text="🎯 PTZ CONTROL" Foreground="#F9E2AF" FontWeight="SemiBold" FontSize="10"/>
                                 </Expander.Header>
