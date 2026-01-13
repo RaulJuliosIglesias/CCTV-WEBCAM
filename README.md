@@ -7,8 +7,8 @@
 [![.NET 8](https://img.shields.io/badge/.NET-8.0-512BD4?style=for-the-badge&logo=dotnet)](https://dotnet.microsoft.com/)
 [![Windows 11](https://img.shields.io/badge/Windows-11-0078D4?style=for-the-badge&logo=windows11)](https://www.microsoft.com/windows)
 [![License](https://img.shields.io/badge/License-Proprietary-red?style=for-the-badge)](LICENSE)
-[![GitHub release](https://img.shields.io/github/v/release/YOUR_USERNAME/RTSPVirtualCam?style=for-the-badge)](../../releases/latest)
-[![GitHub downloads](https://img.shields.io/github/downloads/YOUR_USERNAME/RTSPVirtualCam/total?style=for-the-badge)](../../releases)
+[![GitHub release](https://img.shields.io/github/v/release/RaulJuliosIglesias/CCTV-WEBCAM?style=for-the-badge)](../../releases/latest)
+[![GitHub downloads](https://img.shields.io/github/downloads/RaulJuliosIglesias/CCTV-WEBCAM/total?style=for-the-badge)](../../releases)
 
 <p align="center">
   <strong>🇬🇧 English</strong> | <a href="docs/README_ES.md">🇪🇸 Español</a>
@@ -16,7 +16,7 @@
 
 ---
 
-**A lightweight Windows desktop application that connects to Hikvision PTZ cameras (or any RTSP stream) and virtualizes them as webcams for use in Zoom, Teams, Google Meet, and other video conferencing applications.**
+**A lightweight Windows desktop application that connects to IP cameras (Hikvision, Dahua, or any RTSP stream) and virtualizes them as webcams for use in Zoom, Teams, Google Meet, and other video conferencing applications.**
 
 </div>
 
@@ -26,12 +26,14 @@
 
 | Feature | Description |
 |---------|-------------|
-| 🔌 **Easy Connection** | Just paste your RTSP URL and click "Virtualize" |
-| ⚡ **Low Latency** | Optimized for real-time streaming with 300ms buffer |
-| 🪟 **Windows 10/11 Support** | Windows 11: Native API | Windows 10: One-click driver install |
+| 🔌 **Easy Connection** | Just paste your RTSP URL or use the built-in camera discovery |
+| ⚡ **Low Latency** | Optimized for real-time streaming with configurable buffer |
+| 🪟 **Windows 10/11 Support** | Windows 11: Native API | Windows 10: OBS Virtual Camera driver |
 | 📺 **Universal** | Works with Zoom, Teams, Meet, OBS, Discord, and more |
-| 🎨 **Modern UI** | Clean WPF interface with status indicators |
-| 💾 **URL History** | Remembers your last 10 connections |
+| 🎨 **Modern UI** | Clean WPF interface with real-time status indicators |
+| 💾 **Connection History** | Remembers your last 10 connections with profiles |
+| 🎮 **PTZ Control** | Integrated Pan-Tilt-Zoom for supported cameras |
+| 📊 **Stream Info** | Real-time display of resolution, FPS, codec, and bitrate |
 
 ---
 
@@ -107,8 +109,8 @@
 
 ```powershell
 # Clone the repository
-git clone https://github.com/YOUR_USERNAME/RTSPVirtualCam.git
-cd RTSPVirtualCam
+git clone https://github.com/RaulJuliosIglesias/CCTV-WEBCAM.git
+cd CCTV-WEBCAM/RTSPVirtualCam
 
 # Restore and build
 dotnet restore
@@ -314,25 +316,32 @@ RTSPVirtualCam/
 
 ### ✅ v1.0 - MVP (Current)
 - [x] RTSP stream connection via LibVLC
-- [x] Live preview in application
-- [x] Virtual camera service (placeholder)
-- [x] Modern WPF UI
-- [x] URL history
-- [x] Logging
+- [x] Live preview in application with real-time stats
+- [x] Virtual camera service (Windows 11 native + OBS fallback)
+- [x] Modern WPF UI with dark/light theme support
+- [x] Connection history and camera profiles
+- [x] PTZ control for Hikvision cameras
+- [x] Comprehensive logging and diagnostics
+- [x] Multi-brand camera support (Hikvision, Dahua, ONVIF)
+- [x] Portable deployment with auto-updater
+- [x] Bilingual documentation (English/Spanish)
 
 ### 🔄 v1.1 - Enhanced
-- [ ] Full MFCreateVirtualCamera implementation
-- [ ] Settings persistence
-- [ ] Auto-reconnect on disconnect
-- [ ] System tray support
-- [ ] Dark mode theme
+- [ ] Multiple simultaneous camera connections
+- [ ] Advanced PTZ presets and tours
+- [ ] Stream recording and snapshot capabilities
+- [ ] Audio streaming support
+- [ ] Network bandwidth optimization
+- [ ] Hardware acceleration (DXVA2)
+- [ ] Installer with Windows service option
 
 ### 🔄 v1.2 - Advanced
-- [ ] Multiple simultaneous cameras
-- [ ] PTZ control integration
-- [ ] Hardware acceleration (DXVA2)
-- [x] Windows 10 support (OBS Virtual Camera driver)
-- [ ] Installer package
+- [ ] Mobile app companion
+- [ ] Cloud configuration sync
+- [ ] AI-powered camera auto-discovery
+- [ ] Advanced analytics and motion detection
+- [ ] RTMP streaming support
+- [ ] Multi-platform support (macOS, Linux)
 
 ---
 

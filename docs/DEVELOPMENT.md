@@ -19,13 +19,20 @@ RTSPVirtualCam/
 │   ├── 📂 Models/                      # Modelos de datos
 │   │   ├── ConnectionInfo.cs           # Información de conexión RTSP
 │   │   ├── CameraSettings.cs           # Configuración de cámara
+│   │   ├── CameraProfile.cs            # Perfil de cámara guardado
+│   │   ├── CameraConnection.cs        # Estado de conexión
+│   │   ├── PtzPreset.cs               # Presets PTZ
 │   │   └── AppSettings.cs              # Configuración de aplicación
 │   │
 │   ├── 📂 Services/                    # Lógica de negocio principal
 │   │   ├── IRtspService.cs             # Interfaz servicio RTSP
 │   │   ├── RtspService.cs              # Implementación RTSP con LibVLC
 │   │   ├── IVirtualCameraService.cs    # Interfaz cámara virtual
-│   │   └── VirtualCameraService.cs     # Implementación cámara virtual
+│   │   ├── VirtualCameraService.cs     # Implementación cámara virtual
+│   │   ├── HikvisionPtzService.cs      # Control PTZ cámaras Hikvision
+│   │   ├── CameraProfileService.cs     # Gestión de perfiles de cámara
+│   │   ├── OBSVirtualCamOutput.cs      # Salida OBS Virtual Camera
+│   │   └── UnityCaptureOutput.cs       # Salida Unity Capture
 │   │
 │   ├── 📂 ViewModels/                  # MVVM ViewModels
 │   │   └── MainViewModel.cs            # ViewModel principal
@@ -80,7 +87,9 @@ RTSPVirtualCam/
 | **Runtime** | .NET | 8.0+ | Framework principal |
 | **UI Framework** | WPF | - | Interfaz de usuario nativa Windows |
 | **RTSP Streaming** | LibVLCSharp | 3.8.5 | Decodificación y streaming RTSP |
-| **Virtual Camera** | DirectN | 2024.6.26.1 | API MFCreateVirtualCamera |
+| **Virtual Camera** | DirectN | 1.18.0 | API MFCreateVirtualCamera |
+| **PTZ Control** | System.Management | 8.0.0 | WMI queries para PTZ |
+| **Unity Capture** | UnityCapture | - | Plugin Unity Capture |
 | **MVVM Pattern** | CommunityToolkit.Mvvm | 8.2.2 | Implementación MVVM |
 | **Logging** | Serilog | 4.0.0 | Registro estructurado |
 | **Dependency Injection** | Microsoft.Extensions.DependencyInjection | 8.0.0 | Contenedor DI |
@@ -267,18 +276,18 @@ Log.Logger = new LoggerConfiguration()
 
 ## 🔮 Future Development
 
-### Planned Features
-- **Settings Window**: Advanced configuration UI
-- **Multiple Cameras**: Support for simultaneous streams
-- **PTZ Control**: Camera movement controls
-- **Recording**: Stream recording functionality
-- **System Tray**: Minimize to tray support
+### 🔄 v1.1 - Enhanced
+- **Multiple Cameras**: Soporte para conexiones simultáneas
+- **Advanced PTZ**: Presets, tours y control mejorado
+- **Recording**: Grabación de streams y snapshots
+- **Audio Support**: Streaming de audio integrado
+- **Hardware Acceleration**: DXVA2 para procesamiento de video
+- **Network Optimization**: Adaptive bitrate y buffering
 
 ### Technical Improvements
 - **Hardware Acceleration**: DXVA2 for video processing
 - **Better Error Handling**: Retry mechanisms and fallbacks
 - **Performance Optimization**: Memory management and threading
-- **Windows 10 Support**: DirectShow fallback implementation
 
 ---
 

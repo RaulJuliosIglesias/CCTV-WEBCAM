@@ -23,19 +23,27 @@
 #### Paso 2: Conectar a Cámara RTSP
 1. Ingresa la URL RTSP en el campo correspondiente
 2. Formato: `rtsp://usuario:contraseña@IP:puerto/ruta`
-3. Ejemplos comunes:
+3. Selecciona la marca de cámara desde el dropdown (Hikvision, Dahua, ONVIF)
+4. Ejemplos comunes:
    - **Hikvision**: `rtsp://admin:password@192.168.1.100:554/Streaming/Channels/101`
    - **Dahua**: `rtsp://admin:password@192.168.1.100:554/cam/realmonitor?channel=1&subtype=0`
+   - **ONVIF**: `rtsp://admin:password@192.168.1.100:554/onvif1`
 
 #### Paso 3: Verificar Conexión
 1. Haz clic en **▶ Preview** para probar el stream
 2. Verifica que la imagen se muestre correctamente
-3. Revisa la información de stream (resolución, fps, codec)
+3. Revisa la información de stream en la barra de estado:
+   - Resolución (ej: 1920x1080)
+   - FPS (ej: 30 fps)
+   - Codec (ej: H.264)
+   - Bitrate y transporte
 
 #### Paso 4: Virtualizar Cámara
 1. Haz clic en **📹 Virtualize** para crear la cámara virtual
 2. Espera el mensaje "Virtual Camera Active"
 3. La cámara ahora está disponible para otras aplicaciones
+4. **Windows 11**: Aparece como "RTSP VirtualCam"
+5. **Windows 10**: Aparece como "OBS Virtual Camera"
 
 #### Paso 5: Usar en Aplicaciones
 1. Abre Zoom, Teams, Meet, OBS, Discord, etc.
@@ -49,6 +57,8 @@
 - **Virtualize**: Crea cámara virtual Windows
 - **Stop**: Detiene conexión y virtualización
 - **Settings**: Configuración avanzada (próximamente)
+- **PTZ Controls**: Pan-Tilt-Zoom (solo cámaras compatibles)
+- **Profiles**: Guarda y carga configuraciones de cámara
 
 #### Barra de Estado
 - **Estado**: Conectado/Virtualizado/Desconectado
@@ -56,6 +66,8 @@
 - **Frame Rate**: FPS del stream (ej: 30 fps)
 - **Codec**: Tipo de compresión (ej: H.264)
 - **Transport**: Protocolo (TCP/UDP)
+- **Bitrate**: Tasa de datos actual
+- **Latency**: Latencia de conexión en ms
 
 #### Historial de URLs
 - Guarda automáticamente las últimas 10 conexiones
@@ -112,19 +124,27 @@
 #### Step 2: Connect to RTSP Camera
 1. Enter RTSP URL in the corresponding field
 2. Format: `rtsp://username:password@IP:port/path`
-3. Common examples:
+3. Select camera brand from dropdown (Hikvision, Dahua, ONVIF)
+4. Common examples:
    - **Hikvision**: `rtsp://admin:password@192.168.1.100:554/Streaming/Channels/101`
    - **Dahua**: `rtsp://admin:password@192.168.1.100:554/cam/realmonitor?channel=1&subtype=0`
+   - **ONVIF**: `rtsp://admin:password@192.168.1.100:554/onvif1`
 
 #### Step 3: Verify Connection
 1. Click **▶ Preview** to test the stream
 2. Verify the image displays correctly
-3. Check stream information (resolution, fps, codec)
+3. Check stream information in status bar:
+   - Resolution (e.g., 1920x1080)
+   - FPS (e.g., 30 fps)
+   - Codec (e.g., H.264)
+   - Bitrate and transport
 
 #### Step 4: Virtualize Camera
 1. Click **📹 Virtualize** to create virtual camera
 2. Wait for "Virtual Camera Active" message
 3. Camera is now available for other applications
+4. **Windows 11**: Appears as "RTSP VirtualCam"
+5. **Windows 10**: Appears as "OBS Virtual Camera"
 
 #### Step 5: Use in Applications
 1. Open Zoom, Teams, Meet, OBS, Discord, etc.
@@ -138,6 +158,8 @@
 - **Virtualize**: Creates Windows virtual camera
 - **Stop**: Stops connection and virtualization
 - **Settings**: Advanced configuration (coming soon)
+- **PTZ Controls**: Pan-Tilt-Zoom (compatible cameras only)
+- **Profiles**: Save and load camera configurations
 
 #### Status Bar
 - **Status**: Connected/Virtualized/Disconnected
@@ -145,6 +167,8 @@
 - **Frame Rate**: Stream FPS (e.g., 30 fps)
 - **Codec**: Compression type (e.g., H.264)
 - **Transport**: Protocol (TCP/UDP)
+- **Bitrate**: Current data rate
+- **Latency**: Connection latency in ms
 
 #### URL History
 - Automatically saves last 10 connections

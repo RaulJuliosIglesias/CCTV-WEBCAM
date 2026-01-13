@@ -1,8 +1,20 @@
 # Deployment Guide
 
-This guide explains how to configure your GitHub repository to keep the source code private while allowing anyone to download the portable releases.
+This guide explains how to configure your GitHub repository to keep the source code private while allowing anyone to download the portable releases. The repository uses automated CI/CD workflows to build and release the application.
 
-## Repository Configuration
+## Distribution Strategy
+
+### Current Approach: Public Repository
+
+The repository is currently **public** with:
+- **Source code visible** for transparency and community contribution
+- **Automated releases** via GitHub Actions
+- **Portable executables** available for immediate download
+- **Complete documentation** in both English and Spanish
+
+### Alternative: Private Repository Strategy
+
+If you need to keep source code private:
 
 ### Option 1: Private Repository with Public Releases (Recommended)
 
@@ -78,14 +90,23 @@ Create public releases programmatically:
 
 ## Automated Deployment
 
-### Current CI/CD Workflow
+### Current CI/CD Workflow Features
+
+- **Multi-target Support**: Windows 10 (1809+) and Windows 11 (Build 22000+)
+- **Self-contained Publishing**: Includes .NET 8 runtime and all dependencies
+- **Native Dependencies**: LibVLC, DirectN, and OBS Virtual Camera drivers included
+- **Automated Testing**: Basic smoke tests for virtual camera creation
+- **Version Management**: Semantic versioning with automatic changelog extraction
+- **Security**: SHA256 checksums for release verification
 
 The repository includes an automated workflow (`.github/workflows/build.yml`) that:
 
-1. **Builds on every push** to main/master
-2. **Creates releases** when you push a tag
-3. **Packages portable version** automatically
-4. **Generates checksums** for security
+1. **Builds on every push** to main/master branch
+2. **Creates releases** when you push a version tag
+3. **Packages portable version** automatically with all dependencies
+4. **Generates SHA256 checksums** for security verification
+5. **Extracts changelog** from CHANGELOG.md automatically
+6. **Supports both Windows 11 native** and **Windows 10 OBS fallback** virtual camera
 
 ### How to Create a Release
 
@@ -122,7 +143,22 @@ gh release create v1.0.0 \
   --notes "See CHANGELOG.md for details"
 ```
 
-## Version Numbering
+## Enhanced Build Features
+
+### Portable Package Contents
+
+Each release includes:
+```
+RTSPVirtualCam-v1.0.0-portable-win-x64/
+├── RTSPVirtualCam.exe           # Main application
+├── libvlc/                       # VLC native libraries
+├── scripts/                      # Utility scripts
+│   ├── install-virtualcam.bat    # Windows 10 driver install
+│   └── install-unity-multicam.bat # Unity capture plugin
+├── appsettings.json             # Application configuration
+├── CHANGELOG.md                  # Version history
+└── RTSPVirtualCam-v1.0.0.zip.sha256 # Security checksum
+```
 
 Follow [Semantic Versioning](https://semver.org/):
 

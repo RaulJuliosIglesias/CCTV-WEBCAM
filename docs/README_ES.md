@@ -14,7 +14,7 @@
 
 ---
 
-**Una aplicación de escritorio Windows ligera que conecta cámaras PTZ Hikvision (o cualquier stream RTSP) y las virtualiza como webcams para usar en Zoom, Teams, Google Meet y otras aplicaciones de videoconferencia.**
+**Una aplicación de escritorio Windows ligera que conecta cámaras IP (Hikvision, Dahua, o cualquier stream RTSP) y las virtualiza como webcams para usar en Zoom, Teams, Google Meet y otras aplicaciones de videoconferencia.**
 
 </div>
 
@@ -24,12 +24,14 @@
 
 | Característica | Descripción |
 |----------------|-------------|
-| 🔌 **Conexión Fácil** | Solo pega tu URL RTSP y haz clic en "Virtualizar" |
-| ⚡ **Baja Latencia** | Optimizado para streaming en tiempo real con buffer de 300ms |
-| 🪟 **Windows 10/11 Soporte** | Windows 11: API Nativa | Windows 10: Instalación automática de driver |
+| 🔌 **Conexión Fácil** | Solo pega tu URL RTSP o usa el descubrimiento automático de cámaras |
+| ⚡ **Baja Latencia** | Optimizado para streaming en tiempo real con buffer configurable |
+| 🪟 **Windows 10/11 Soporte** | Windows 11: API Nativa | Windows 10: Driver OBS Virtual Camera |
 | 📺 **Universal** | Funciona con Zoom, Teams, Meet, OBS, Discord y más |
-| 🎨 **UI Moderna** | Interfaz WPF limpia con indicadores de estado |
-| 💾 **Historial de URLs** | Recuerda tus últimas 10 conexiones |
+| 🎨 **UI Moderna** | Interfaz WPF limpia con indicadores de estado en tiempo real |
+| 💾 **Historial de Conexiones** | Recuerda tus últimas 10 conexiones con perfiles |
+| 🎮 **Control PTZ** | Pan-Tilt-Zoom integrado para cámaras compatibles |
+| 📊 **Info del Stream** | Muestra en tiempo real resolución, FPS, codec y bitrate |
 
 ---
 
@@ -77,7 +79,7 @@
 
 ```powershell
 # Clonar el repositorio
-git clone https://github.com/YOUR_USERNAME/CCTV-WEBCAM.git
+git clone https://github.com/RaulJuliosIglesias/CCTV-WEBCAM.git
 cd CCTV-WEBCAM/RTSPVirtualCam
 
 # Restaurar y compilar
@@ -266,25 +268,32 @@ RTSPVirtualCam/
 
 ### ✅ v1.0 - MVP (Actual)
 - [x] Conexión stream RTSP via LibVLC
-- [x] Vista previa en la aplicación
-- [x] Servicio de cámara virtual (placeholder)
-- [x] UI WPF moderna
-- [x] Historial de URLs
-- [x] Logging
+- [x] Vista previa en aplicación con estadísticas en tiempo real
+- [x] Servicio cámara virtual (Windows 11 nativo + OBS fallback)
+- [x] UI WPF moderna con soporte tema claro/oscuro
+- [x] Historial de conexiones y perfiles de cámara
+- [x] Control PTZ para cámaras Hikvision
+- [x] Logging y diagnóstico completo
+- [x] Soporte multi-marca (Hikvision, Dahua, ONVIF)
+- [x] Despliegue portable con auto-updater
+- [x] Documentación bilingüe (Inglés/Español)
 
 ### 🔄 v1.1 - Mejorada
-- [ ] Implementación completa de MFCreateVirtualCamera
-- [ ] Persistencia de configuraciones
-- [ ] Auto-reconexión en desconexión
-- [ ] Soporte para bandeja del sistema
-- [ ] Tema modo oscuro
+- [ ] Múltiples conexiones simultáneas de cámara
+- [ ] Presets PTZ avanzados y tours
+- [ ] Grabación de stream y capturas de pantalla
+- [ ] Soporte para streaming de audio
+- [ ] Optimización de ancho de banda de red
+- [ ] Aceleración por hardware (DXVA2)
+- [ ] Instalador con opción de servicio Windows
 
 ### 🔮 v1.2 - Avanzada
-- [ ] Múltiples cámaras simultáneas
-- [ ] Integración de control PTZ
-- [ ] Aceleración por hardware (DXVA2)
-- [ ] Soporte para Windows 10 (DirectShow)
-- [ ] Paquete de instalación
+- [ ] Aplicación móvil companion
+- [ ] Sincronización de configuración en la nube
+- [ ] Descubrimiento automático de cámaras con IA
+- [ ] Analíticas avanzadas y detección de movimiento
+- [ ] Soporte streaming RTMP
+- [ ] Soporte multi-plataforma (macOS, Linux)
 
 ---
 

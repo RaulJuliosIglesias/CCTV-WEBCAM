@@ -87,6 +87,23 @@ rtsp://admin:password@IP:554/cam/realmonitor?channel=1&subtype=1
 rtsp://admin:password@IP:554/onvif1
 ```
 
+#### ❌ PTZ controls not working
+
+**Symptoms:**
+- PTZ buttons disabled or not responding
+- Camera movement commands fail
+
+**Solutions:**
+1. **Check camera compatibility** - PTZ only works with Hikvision cameras currently
+2. **Verify PTZ credentials** - Separate RTSP and PTZ credentials may be required
+3. **Check camera firmware** - Update to latest firmware
+4. **Test with manufacturer software** - Verify PTZ works with official tools
+5. **Check network ports** - PTZ may use different ports than RTSP
+
+**Symptoms:**
+- Immediate error message
+- VLC asks for credentials
+
 #### ❌ "Authentication failed"
 
 **Symptoms:**
@@ -108,6 +125,23 @@ rtsp://admin:password@IP:554/onvif1
    - `admin:12345`
    - `admin:password`
    - `admin:` (no password)
+
+#### ❌ "High CPU usage"
+
+**Symptoms:**
+- System becomes slow
+- RTSPVirtualCam.exe using high CPU
+
+**Solutions:**
+1. **Lower camera resolution** - Use sub-stream instead of main stream
+2. **Reduce FPS** - Set to 15-20 FPS instead of 30
+3. **Enable hardware acceleration** - Settings → Performance → Hardware decode
+4. **Close other applications** - Free up system resources
+5. **Update graphics drivers** - Ensure GPU acceleration is working
+
+**Symptoms:**
+- Connection succeeds but no video
+- Error about unsupported format
 
 #### ❌ "Unsupported codec" / "Stream not found"
 
@@ -164,7 +198,24 @@ rtsp://admin:password@IP:554/onvif1
 
 ### 🎥 Virtual Camera Issues
 
-#### ❌ Camera not appearing in apps
+#### ❌ "Virtual camera creation failed"
+
+**Symptoms:**
+- Error message when clicking Virtualize
+- Camera appears but shows black screen
+
+**Solutions:**
+1. **Check Windows version** - Windows 11 Build 22000+ required
+2. **Run as administrator** - Right-click RTSPVirtualCam.exe → Run as admin
+3. **Check camera privacy settings**:
+   - Settings → Privacy → Camera
+   - Enable "Camera access" and "Allow desktop apps to access camera"
+4. **Restart Windows Camera service**:
+   ```powershell
+   net stop FrameServer
+   net start FrameServer
+   ```
+5. **Update graphics drivers** - Latest drivers from manufacturer
 
 **Symptoms:**
 - "RTSP VirtualCam" not in camera list
@@ -196,10 +247,12 @@ winver
 
 **Solutions:**
 - **Upgrade to Windows 11** (recommended)
-- **Use OBS Virtual Camera** as workaround:
-  1. Add RTSP source in OBS
-  2. Start OBS Virtual Camera
-  3. Select "OBS Virtual Camera" in apps
+- **Use Windows 10 with OBS Virtual Camera**:
+  1. Install OBS Studio
+  2. Add RTSP source in OBS
+  3. Start OBS Virtual Camera
+  4. Select "OBS Virtual Camera" in apps
+- **Use Unity Capture plugin** (included in scripts folder)
 
 ---
 
@@ -332,6 +385,23 @@ rtsp://admin:password@IP:554/cam/realmonitor?channel=1&subtype=1
 rtsp://admin:password@IP:554/onvif1
 ```
 
+#### ❌ Controles PTZ no funcionan
+
+**Síntomas:**
+- Botones PTZ deshabilitados o no responden
+- Comandos de movimiento de cámara fallan
+
+**Soluciones:**
+1. **Verificar compatibilidad de cámara** - PTZ solo funciona con cámaras Hikvision actualmente
+2. **Verificar credenciales PTZ** - Pueden requerirse credenciales separadas para RTSP y PTZ
+3. **Verificar firmware de cámara** - Actualizar a firmware más reciente
+4. **Probar con software del fabricante** - Verificar que PTZ funciona con herramientas oficiales
+5. **Verificar puertos de red** - PTZ puede usar puertos diferentes a RTSP
+
+**Síntomas:**
+- Mensaje de error inmediato
+- VLC solicita credenciales
+
 #### ❌ "Fallo de autenticación"
 
 **Síntomas:**
@@ -353,6 +423,23 @@ rtsp://admin:password@IP:554/onvif1
    - `admin:12345`
    - `admin:password`
    - `admin:` (sin contraseña)
+
+#### ❌ "Alto uso de CPU"
+
+**Síntomas:**
+- El sistema se vuelve lento
+- RTSPVirtualCam.exe usando alta CPU
+
+**Soluciones:**
+1. **Reducir resolución de cámara** - Usar sub-stream en lugar de stream principal
+2. **Reducir FPS** - Configurar a 15-20 FPS en lugar de 30
+3. **Activar aceleración por hardware** - Configuración → Rendimiento → Decodificación por hardware
+4. **Cerrar otras aplicaciones** - Liberar recursos del sistema
+5. **Actualizar controladores gráficos** - Asegurar que la aceleración GPU funcione
+
+**Síntomas:**
+- Conexión exitosa pero sin video
+- Error sobre formato no soportado
 
 #### ❌ "Codec no soportado" / "Stream no encontrado"
 
@@ -409,7 +496,24 @@ rtsp://admin:password@IP:554/onvif1
 
 ### 🎥 Problemas de Cámara Virtual
 
-#### ❌ La cámara no aparece en las apps
+#### ❌ "Falló creación de cámara virtual"
+
+**Síntomas:**
+- Mensaje de error al hacer clic en Virtualizar
+- La cámara aparece pero muestra pantalla negra
+
+**Soluciones:**
+1. **Verificar versión de Windows** - Se requiere Windows 11 Build 22000+
+2. **Ejecutar como administrador** - Clic derecho en RTSPVirtualCam.exe → Ejecutar como administrador
+3. **Verificar configuración de privacidad de cámara**:
+   - Configuración → Privacidad → Cámara
+   - Activar "Acceso a cámara" y "Permitir que apps de escritorio accedan a la cámara"
+4. **Reiniciar servicio Windows Camera**:
+   ```powershell
+   net stop FrameServer
+   net start FrameServer
+   ```
+5. **Actualizar controladores gráficos** - Últimos controladores del fabricante
 
 **Síntomas:**
 - "RTSP VirtualCam" no está en lista de cámaras
@@ -441,10 +545,12 @@ winver
 
 **Soluciones:**
 - **Actualizar a Windows 11** (recomendado)
-- **Usar OBS Virtual Camera** como alternativa:
-  1. Agregar fuente RTSP en OBS
-  2. Iniciar OBS Virtual Camera
-  3. Seleccionar "OBS Virtual Camera" en las apps
+- **Usar Windows 10 con OBS Virtual Camera**:
+  1. Instalar OBS Studio
+  2. Agregar fuente RTSP en OBS
+  3. Iniciar OBS Virtual Camera
+  4. Seleccionar "OBS Virtual Camera" en las apps
+- **Usar plugin Unity Capture** (incluido en carpeta scripts)
 
 ---
 

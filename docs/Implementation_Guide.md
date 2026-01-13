@@ -8,14 +8,31 @@
 ## 📋 Resumen del Proyecto
 
 **Objetivo**: Crear una aplicación de escritorio Windows que:
-1. Conecte a cámaras PTZ Hikvision via RTSP
-2. Virtualice el stream como webcam para Zoom/Meet/Teams
+1. Conecte a cámaras IP (Hikvision, Dahua, ONVIF) via RTSP
+2. Virtualice el stream como webcam para Zoom/Meet/Teams/OBS
+3. Proporcione control PTZ para cámaras compatibles
+4. Ofrezca una interfaz moderna y fácil de usar
+
+**Características Implementadas**
+- ✅ Conexión RTSP multi-marca (Hikvision, Dahua, ONVIF)
+- ✅ Vista previa en tiempo real con estadísticas
+- ✅ Virtual camera (Windows 11 nativo + OBS fallback)
+- ✅ Control PTZ para cámaras Hikvision
+- ✅ Historial de conexiones y perfiles
+- ✅ UI moderna con tema claro/oscuro
+- ✅ Logging estructurado y diagnóstico
+- ✅ Portable deployment auto-contenido
+- ✅ Documentación bilingüe completa (alternativa)
 
 **Stack Tecnológico Final**:
-- .NET 8 + WPF (UI)
+- .NET 8 + WPF (UI moderna con MVVM)
 - LibVLCSharp (RTSP ingest y decode)
 - MFCreateVirtualCamera via DirectN (Virtual Camera Win11)
-- Single-file self-contained exe
+- OBS Virtual Camera fallback (Windows 10)
+- Unity Capture plugin (alternativa)
+- System.Management (PTZ control)
+- Serilog (logging estructurado)
+- Self-contained portable deployment
 
 ---
 
@@ -42,11 +59,11 @@ dotnet sln add src/RTSPVirtualCam/RTSPVirtualCam.csproj
     <ApplicationIcon>Resources\Icons\app.ico</ApplicationIcon>
     <AssemblyName>RTSPVirtualCam</AssemblyName>
     <RootNamespace>RTSPVirtualCam</RootNamespace>
-    
-    <!-- Single-file publish settings -->
-    <PublishSingleFile>true</PublishSingleFile>
-    <SelfContained>true</SelfContained>
     <RuntimeIdentifier>win-x64</RuntimeIdentifier>
+    
+    <!-- Portable deployment settings -->
+    <SelfContained>true</SelfContained>
+    <PublishSingleFile>false</PublishSingleFile>
     <IncludeNativeLibrariesForSelfExtract>true</IncludeNativeLibrariesForSelfExtract>
   </PropertyGroup>
 
@@ -60,7 +77,10 @@ dotnet sln add src/RTSPVirtualCam/RTSPVirtualCam.csproj
     <PackageReference Include="VideoLAN.LibVLC.Windows" Version="3.0.20" />
     
     <!-- Media Foundation Virtual Camera -->
-    <PackageReference Include="DirectN" Version="2024.6.26.1" />
+    <PackageReference Include="DirectN" Version="1.18.0" />
+    
+    <!-- PTZ Control -->
+    <PackageReference Include="System.Management" Version="8.0.0" />
     
     <!-- Logging -->
     <PackageReference Include="Serilog" Version="4.0.0" />
@@ -75,6 +95,10 @@ dotnet sln add src/RTSPVirtualCam/RTSPVirtualCam.csproj
     <None Update="appsettings.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
+    <Content Include="..\..\scripts\**\*.*">
+        <Link>scripts\%(RecursiveDir)%(Filename)%(Extension)</Link>
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
   </ItemGroup>
 
 </Project>
@@ -95,6 +119,18 @@ public record ConnectionInfo
     public string Transport { get; init; } = "tcp"; // tcp or udp
     public int TimeoutSeconds { get; init; } = 30;
     public DateTime LastUsed { get; init; } = DateTime.UtcNow;
+    public CameraBrand Brand { get; init; } = CameraBrand.Hikvision;
+    public string? Username { get; init; }
+    public string? Password { get; init; }
+    public int Port { get; init; } = 554;
+}
+
+public enum CameraBrand
+{
+    Hikvision,
+    Dahua,
+    ONVIF,
+    Generic
 }
 ```
 
