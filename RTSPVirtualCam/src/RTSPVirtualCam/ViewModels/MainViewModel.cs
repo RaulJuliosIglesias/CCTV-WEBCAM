@@ -22,7 +22,7 @@ public partial class MainViewModel : ObservableObject
     
     // Connection fields
     [ObservableProperty]
-    private string _ipAddress = "192.168.1.100";
+    private string _ipAddress = "192.168.1.64";
     
     [ObservableProperty]
     private int _port = 554;
@@ -39,6 +39,9 @@ public partial class MainViewModel : ObservableObject
     
     [ObservableProperty]
     private string _ptzPassword = string.Empty;
+    
+    // PTZ Presets
+    public ObservableCollection<PtzPreset> PtzPresets { get; } = new();
     
     [ObservableProperty]
     private CameraBrand _selectedBrand = CameraBrand.Hikvision;
@@ -164,6 +167,12 @@ public partial class MainViewModel : ObservableObject
         
         // Subscribe to PTZ service logs
         _ptzService.OnLog += (msg) => AddLog(msg);
+        
+        // Initialize PTZ presets (1-10 for Hikvision)
+        for (int i = 1; i <= 10; i++)
+        {
+            PtzPresets.Add(new PtzPreset { Id = i, Name = $"Preset {i}", IsEnabled = true });
+        }
         
         // Initial log
         AddLog("Application started");
@@ -885,6 +894,13 @@ public partial class MainViewModel : ObservableObject
     [RelayCommand]
     private async Task PtzZoomOutAsync() => await ExecutePtzCommandAsync("zoomout");
     
+    [RelayCommand]
+    private async Task GotoPresetAsync(PtzPreset? preset)
+    {
+        if (preset == null) return;
+        await ExecutePtzPresetAsync(preset.Id);
+    }
+    
     private async Task ExecutePtzCommandAsync(string command)
     {
         await Task.Run(async () =>
@@ -1056,6 +1072,49 @@ public partial class MainViewModel : ObservableObject
             }
         }
         catch { }
+    }
+    
+    private async Task ExecutePtzPresetAsync(int presetId)
+    {
+        await Task.Run(async () =>
+        {
+            try
+            {
+                string ptzUser = string.IsNullOrWhiteSpace(PtzUsername) ? Username : PtzUsername;
+                string ptzPass = string.IsNullOrWhiteSpace(PtzPassword) ? Password : PtzPassword;
+                
+                var handler = new System.Net.Http.HttpClientHandler
+                {
+                    Credentials = new System.Net.NetworkCredential(ptzUser, ptzPass),
+                    PreAuthenticate = true
+                };
+                
+                using var client = new System.Net.Http.HttpClient(handler);
+                client.Timeout = TimeSpan.FromSeconds(5);
+                
+                if (SelectedBrand == CameraBrand.Hikvision)
+                {
+                    string url = $"http://{IpAddress}/ISAPI/PTZCtrl/channels/1/presets/{presetId}/goto";
+                    
+                    AddLog($"📍 Going to Preset #{presetId}");
+                    
+                    var response = await client.PutAsync(url, null);
+                    
+                    if (response.IsSuccessStatusCode)
+                    {
+                        AddLog($"✅ Moved to Preset #{presetId}");
+                    }
+                    else
+                    {
+                        AddLog($"⚠️ Preset failed: {response.StatusCode}");
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                AddLog($"❌ Preset error: {ex.Message}");
+            }
+        });
     }
     
     private (int pan, int tilt, int zoom) GetPtzValues(string command)

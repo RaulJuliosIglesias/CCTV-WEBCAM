@@ -483,31 +483,63 @@
                                 <Slider Minimum="-100" Maximum="100" Value="{Binding VirtualContrast}" Margin="0,4,0,0"/>
                             </StackPanel>
                             
-                            <!-- PTZ Controls -->
-                            <TextBlock Text="🎯 PTZ CONTROL" FontSize="9" Foreground="#6C7086" FontWeight="Bold" Margin="0,5,0,8"/>
+                            <!-- PTZ Control -->
+                            <TextBlock Text="🎯 PTZ CONTROL" FontSize="9" Foreground="#6C7086" FontWeight="Bold" Margin="0,0,0,8"/>
                             
-                            <Grid HorizontalAlignment="Center" Margin="0,0,0,10">
+                            <Grid Margin="0,0,0,8">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
                                 <Grid.RowDefinitions>
-                                    <RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
                                 </Grid.RowDefinitions>
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="Auto"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="Auto"/>
-                                </Grid.ColumnDefinitions>
                                 
-                                <Button Grid.Row="0" Grid.Column="1" Content="▲" Command="{Binding PtzUpCommand}" Style="{StaticResource PTZButton}" Margin="2"/>
-                                <Button Grid.Row="1" Grid.Column="0" Content="◀" Command="{Binding PtzLeftCommand}" Style="{StaticResource PTZButton}" Margin="2"/>
-                                <Button Grid.Row="1" Grid.Column="1" Content="⏺" Command="{Binding PtzHomeCommand}" Style="{StaticResource PTZButton}" Margin="2"/>
-                                <Button Grid.Row="1" Grid.Column="2" Content="▶" Command="{Binding PtzRightCommand}" Style="{StaticResource PTZButton}" Margin="2"/>
-                                <Button Grid.Row="2" Grid.Column="1" Content="▼" Command="{Binding PtzDownCommand}" Style="{StaticResource PTZButton}" Margin="2"/>
+                                <!-- First row: Up -->
+                                <Button Grid.Row="0" Grid.Column="1" Content="▲" Command="{Binding PtzUpCommand}" Style="{StaticResource PTZButton}"/>
+                                
+                                <!-- Second row: Left, Home, Right -->
+                                <Button Grid.Row="1" Grid.Column="0" Content="◀" Command="{Binding PtzLeftCommand}" Style="{StaticResource PTZButton}" Margin="0,0,4,0"/>
+                                <Button Grid.Row="1" Grid.Column="1" Content="⊙" Command="{Binding PtzHomeCommand}" Style="{StaticResource PTZButton}" Margin="4,0,4,0"/>
+                                <Button Grid.Row="1" Grid.Column="2" Content="▶" Command="{Binding PtzRightCommand}" Style="{StaticResource PTZButton}" Margin="4,0,0,0"/>
+                                
+                                <!-- Third row: Down -->
+                                <Button Grid.Row="2" Grid.Column="1" Content="▼" Command="{Binding PtzDownCommand}" Style="{StaticResource PTZButton}"/>
                             </Grid>
                             
-                            <Grid Margin="0,0,0,5">
+                            <!-- Zoom controls -->
+                            <Grid Margin="0,0,0,8">
                                 <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="*"/><ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="*"/>
                                 </Grid.ColumnDefinitions>
-                                <Button Grid.Column="0" Content="🔍−" Command="{Binding PtzZoomOutCommand}" Style="{StaticResource ControlButton}" Margin="0,0,4,0"/>
-                                <Button Grid.Column="1" Content="🔍+" Command="{Binding PtzZoomInCommand}" Style="{StaticResource ControlButton}" Margin="4,0,0,0"/>
+                                <Button Grid.Column="0" Content="🔍 +" Command="{Binding PtzZoomInCommand}" Style="{StaticResource PTZButton}" Margin="0,0,4,0"/>
+                                <Button Grid.Column="1" Content="🔍 -" Command="{Binding PtzZoomOutCommand}" Style="{StaticResource PTZButton}" Margin="4,0,0,0"/>
                             </Grid>
+                            
+                            <!-- Presets -->
+                            <TextBlock Text="📍 PRESETS" FontSize="9" Foreground="#6C7086" FontWeight="Bold" Margin="0,8,0,8"/>
+                            
+                            <ItemsControl ItemsSource="{Binding PtzPresets}">
+                                <ItemsControl.ItemsPanel>
+                                    <ItemsPanelTemplate>
+                                        <UniformGrid Columns="5" HorizontalAlignment="Stretch"/>
+                                    </ItemsPanelTemplate>
+                                </ItemsControl.ItemsPanel>
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <Button Content="{Binding Id}" 
+                                                Command="{Binding DataContext.GotoPresetCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                                                CommandParameter="{Binding}"
+                                                Style="{StaticResource PTZButton}"
+                                                Margin="2"
+                                                ToolTip="{Binding Name}"/>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
                         </StackPanel>
                     </Expander>
                     

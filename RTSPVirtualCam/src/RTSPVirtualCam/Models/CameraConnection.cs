@@ -25,7 +25,7 @@ public enum StreamType
 /// </summary>
 public class CameraConnection
 {
-    public string IpAddress { get; set; } = "192.168.1.100";
+    public string IpAddress { get; set; } = "192.168.1.64";
     public int Port { get; set; } = 554;
     public string Username { get; set; } = "admin";
     public string Password { get; set; } = string.Empty;
