@@ -84,33 +84,17 @@ if (Test-Path "scripts") {
     Copy-Item "scripts/softcam" "$packageDir/scripts" -Recurse -ErrorAction SilentlyContinue
 }
 
-# Create Windows shortcut (.lnk) in root - more professional than .bat
-$WshShell = New-Object -ComObject WScript.Shell
-$shortcutPath = Join-Path (Resolve-Path $packageDir).Path "RTSPVirtualCam.lnk"
-$shortcut = $WshShell.CreateShortcut($shortcutPath)
-$shortcut.TargetPath = "%windir%\explorer.exe"
-$shortcut.Arguments = "bin\RTSPVirtualCam.exe"
-$shortcut.WorkingDirectory = "%CD%"
-$shortcut.Description = "RTSP VirtualCam - Stream RTSP to Virtual Camera"
-$shortcut.Save()
-
-# Fix shortcut to use relative path (explorer trick for portability)
-$shortcutPath2 = Join-Path (Resolve-Path $packageDir).Path "RTSPVirtualCam.lnk"
-$shortcut2 = $WshShell.CreateShortcut($shortcutPath2)
-$exeFullPath = Join-Path (Resolve-Path "$packageDir/bin").Path "RTSPVirtualCam.exe"
-$shortcut2.TargetPath = $exeFullPath
-$shortcut2.WorkingDirectory = Join-Path (Resolve-Path "$packageDir/bin").Path ""
-$shortcut2.IconLocation = "$exeFullPath,0"
-$shortcut2.Description = "RTSP VirtualCam - Stream RTSP to Virtual Camera"
-$shortcut2.Save()
+# Create launcher batch file (uses %~dp0 for portable relative paths)
+$batContent = '@echo off' + "`r`n" + 'start "" "%~dp0bin\RTSPVirtualCam.exe" %*'
+Set-Content -Path "$packageDir/RTSPVirtualCam.bat" -Value $batContent -Encoding ASCII
 
 # Create QUICKSTART.txt
 $quickstart = "RTSP VirtualCam v$Version`r`n"
 $quickstart += "========================`r`n`r`n"
 $quickstart += "HOW TO START:`r`n"
-$quickstart += "  Double-click RTSPVirtualCam shortcut`r`n`r`n"
+$quickstart += "  Double-click RTSPVirtualCam.bat`r`n`r`n"
 $quickstart += "FOLDER STRUCTURE:`r`n"
-$quickstart += "  RTSPVirtualCam.lnk - Start application (shortcut)`r`n"
+$quickstart += "  RTSPVirtualCam.bat - Start application`r`n"
 $quickstart += "  bin/               - Application files`r`n"
 $quickstart += "  scripts/           - Virtual camera installation`r`n"
 $quickstart += "  logs/              - Application logs`r`n`r`n"

@@ -156,24 +156,17 @@ jobs:
         Copy-Item LICENSE $packageName/ -ErrorAction SilentlyContinue
         Copy-Item CHANGELOG.md $packageName/ -ErrorAction SilentlyContinue
         
-        # Create Windows shortcut (.lnk) for professional appearance
-        $WshShell = New-Object -ComObject WScript.Shell
-        $shortcutPath = Join-Path (Resolve-Path $packageName).Path "RTSPVirtualCam.lnk"
-        $shortcut = $WshShell.CreateShortcut($shortcutPath)
-        $exeFullPath = Join-Path (Resolve-Path "$packageName/bin").Path "RTSPVirtualCam.exe"
-        $shortcut.TargetPath = $exeFullPath
-        $shortcut.WorkingDirectory = Join-Path (Resolve-Path "$packageName/bin").Path ""
-        $shortcut.IconLocation = "$exeFullPath,0"
-        $shortcut.Description = "RTSP VirtualCam - Stream RTSP to Virtual Camera"
-        $shortcut.Save()
+        # Create launcher batch file (uses %~dp0 for portable relative paths)
+        $batContent = '@echo off' + "`r`n" + 'start "" "%~dp0bin\RTSPVirtualCam.exe" %*'
+        Set-Content -Path "$packageName/RTSPVirtualCam.bat" -Value $batContent -Encoding ASCII
         
         # Create QUICKSTART.txt
         $quickstart = "RTSP VirtualCam v$version - Quick Start`r`n"
         $quickstart += "========================================`r`n`r`n"
         $quickstart += "HOW TO START:`r`n"
-        $quickstart += "  Double-click RTSPVirtualCam shortcut`r`n`r`n"
+        $quickstart += "  Double-click RTSPVirtualCam.bat`r`n`r`n"
         $quickstart += "FOLDER STRUCTURE:`r`n"
-        $quickstart += "  RTSPVirtualCam.lnk - Start application (shortcut)`r`n"
+        $quickstart += "  RTSPVirtualCam.bat - Start application`r`n"
         $quickstart += "  bin/               - Application files`r`n"
         $quickstart += "  scripts/           - Virtual camera installation`r`n"
         $quickstart += "  logs/              - Application logs`r`n`r`n"
