@@ -1,0 +1,242 @@
+# ============================================
+# AUTOMATIC RELEASE WORKFLOW
+# ============================================
+# This workflow automatically creates releases when:
+# 1. You push to main with changes in src/
+# 2. You manually trigger it with a version number
+# 
+# ZIP files are uploaded as RELEASE ASSETS (not to the repo)
+# This avoids git bloat and supports files up to 2GB
+# ============================================
+
+name: 🚀 Auto Release
+
+on:
+  push:
+    branches: [ main, master ]
+    paths:
+      - 'src/**'
+      - '*.csproj'
+      - 'CHANGELOG.md'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to release (e.g., 1.2.3)'
+        required: true
+        type: string
+      prerelease:
+        description: 'Mark as pre-release?'
+        required: false
+        type: boolean
+        default: false
+
+env:
+  DOTNET_VERSION: '8.0.x'
+  PROJECT_PATH: 'src/RTSPVirtualCam'
+  SOLUTION_PATH: 'RTSPVirtualCam.sln'
+
+jobs:
+  # ============================================
+  # DETERMINE VERSION
+  # ============================================
+  version:
+    name: 📋 Determine Version
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.version.outputs.VERSION }}
+      should_release: ${{ steps.version.outputs.SHOULD_RELEASE }}
+    
+    steps:
+    - name: 📥 Checkout
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+        
+    - name: 📋 Get version
+      id: version
+      run: |
+        if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
+          # Manual trigger - use provided version
+          VERSION="${{ github.event.inputs.version }}"
+          SHOULD_RELEASE="true"
+        else
+          # Auto trigger - extract version from CHANGELOG.md or use date-based
+          if [ -f "CHANGELOG.md" ]; then
+            # Try to extract latest version from CHANGELOG
+            VERSION=$(grep -oP '## \[\K[0-9]+\.[0-9]+\.[0-9]+' CHANGELOG.md | head -1)
+          fi
+          
+          if [ -z "$VERSION" ]; then
+            # Fallback: generate version from date + run number
+            VERSION="$(date +%Y.%m.%d)-${{ github.run_number }}"
+          fi
+          
+          # Check if this version already has a release
+          if gh release view "v$VERSION" &>/dev/null; then
+            echo "Version v$VERSION already released, skipping"
+            SHOULD_RELEASE="false"
+          else
+            SHOULD_RELEASE="true"
+          fi
+        fi
+        
+        echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
+        echo "SHOULD_RELEASE=$SHOULD_RELEASE" >> $GITHUB_OUTPUT
+        echo "Determined version: $VERSION (release: $SHOULD_RELEASE)"
+      env:
+        GH_TOKEN: ${{ github.token }}
+
+  # ============================================
+  # BUILD
+  # ============================================
+  build:
+    name: 🔨 Build
+    needs: version
+    if: needs.version.outputs.should_release == 'true'
+    runs-on: windows-latest
+    
+    steps:
+    - name: 📥 Checkout
+      uses: actions/checkout@v4
+      
+    - name: 🔧 Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: ${{ env.DOTNET_VERSION }}
+        
+    - name: 📦 Restore
+      run: dotnet restore ${{ env.SOLUTION_PATH }}
+      
+    - name: 🔨 Build
+      run: dotnet build ${{ env.SOLUTION_PATH }} -c Release --no-restore
+      
+    - name: 📤 Publish portable
+      run: |
+        dotnet publish ${{ env.PROJECT_PATH }} `
+          -c Release `
+          -r win-x64 `
+          --self-contained true `
+          -p:PublishSingleFile=false `
+          -p:Version=${{ needs.version.outputs.version }} `
+          -o ./publish
+          
+    - name: 📁 Create package
+      shell: pwsh
+      run: |
+        $version = "${{ needs.version.outputs.version }}"
+        $packageName = "RTSPVirtualCam-v$version-portable-win-x64"
+        
+        # Create package directory
+        New-Item -ItemType Directory -Path $packageName -Force | Out-Null
+        
+        # Copy binaries
+        Copy-Item ./publish/* $packageName/ -Recurse
+        
+        # Copy docs
+        Copy-Item README.md $packageName/ -ErrorAction SilentlyContinue
+        Copy-Item LICENSE $packageName/ -ErrorAction SilentlyContinue
+        Copy-Item CHANGELOG.md $packageName/ -ErrorAction SilentlyContinue
+        
+        # Create quickstart
+        @"
+        RTSP VirtualCam v$version - Quick Start
+        ========================================
+        
+        1. Run RTSPVirtualCam.exe
+        2. Enter your RTSP URL (e.g., rtsp://user:pass@192.168.1.100:554/stream)
+        3. Click "Preview" to test
+        4. Click "Virtualize" to create virtual camera
+        5. Select "RTSP VirtualCam" in your video app
+        
+        Requirements: Windows 11 (Build 22000+)
+        
+        Support: https://github.com/${{ github.repository }}/issues
+        "@ | Out-File -FilePath "$packageName/QUICKSTART.txt" -Encoding UTF8
+        
+        # Create ZIP (this goes to release assets, NOT to the repo)
+        $zipName = "$packageName.zip"
+        Compress-Archive -Path "$packageName/*" -DestinationPath $zipName -CompressionLevel Optimal
+        
+        # Generate checksum
+        $hash = (Get-FileHash $zipName -Algorithm SHA256).Hash
+        "$hash  $zipName" | Out-File -FilePath "$zipName.sha256" -Encoding ASCII
+        
+        # Display info
+        $size = [math]::Round((Get-Item $zipName).Length / 1MB, 2)
+        Write-Host "✅ Package created: $zipName ($size MB)"
+        Write-Host "✅ SHA256: $hash"
+        
+    - name: 📤 Upload artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: release-package
+        path: |
+          *.zip
+          *.sha256
+        retention-days: 1
+
+  # ============================================
+  # CREATE RELEASE
+  # ============================================
+  release:
+    name: 🎉 Create Release
+    needs: [version, build]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    
+    steps:
+    - name: 📥 Checkout
+      uses: actions/checkout@v4
+      
+    - name: 📥 Download artifact
+      uses: actions/download-artifact@v4
+      with:
+        name: release-package
+        path: ./release-files
+        
+    - name: 📋 List files
+      run: |
+        echo "Release files:"
+        ls -la ./release-files/
+        
+    - name: 📝 Generate release notes
+      id: notes
+      run: |
+        VERSION="${{ needs.version.outputs.version }}"
+        
+        # Try to extract changelog section
+        if [ -f "CHANGELOG.md" ]; then
+          NOTES=$(awk '/^## \[?'"$VERSION"'\]?/,/^## \[?[0-9]/' CHANGELOG.md | sed '1d;$d' || echo "")
+        fi
+        
+        if [ -z "$NOTES" ]; then
+          NOTES="Release v$VERSION"
+        fi
+        
+        # Save to file for multiline support
+        echo "$NOTES" > release_notes.md
+        
+    - name: 🎉 Create GitHub Release
+      env:
+        GH_TOKEN: ${{ github.token }}
+        VERSION: ${{ needs.version.outputs.version }}
+      run: |
+        # Create the release with the ZIP as an asset
+        # This uploads the ZIP to GitHub Releases (NOT to the repository)
+        # Release assets can be up to 2GB each
+        
+        PRERELEASE_FLAG=""
+        if [ "${{ github.event.inputs.prerelease }}" == "true" ]; then
+          PRERELEASE_FLAG="--prerelease"
+        fi
+        
+        gh release create "v$VERSION" \
+          --title "RTSP VirtualCam v$VERSION" \
+          --notes-file release_notes.md \
+          $PRERELEASE_FLAG \
+          ./release-files/*.zip \
+          ./release-files/*.sha256
+          
+        echo "✅ Release v$VERSION created successfully!"
+        echo "📥 Download: https://github.com/${{ github.repository }}/releases/tag/v$VERSION"

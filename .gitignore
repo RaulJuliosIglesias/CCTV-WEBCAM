@@ -2,10 +2,21 @@
 # Git Ignore - RTSP VirtualCam
 # ============================================
 
-# Large binary files (exceed GitHub 100MB limit)
+# ============================================
+# IMPORTANT: Release files should NOT be committed!
+# ZIP files are uploaded to GitHub Releases (not the repo)
+# This keeps the repo small and avoids the 100MB file limit
+# ============================================
+
+# Large binary files
 *.exe
 *.pdb
+*.dll
+
+# Release packages (uploaded to GitHub Releases, not repo)
 *.zip
+*.sha256
+RTSPVirtualCam-*.zip
 
 # Build results
 [Bb]in/
@@ -15,9 +26,13 @@
 publish/
 publish-temp/
 package-temp/
+artifact/
+release-package/
 
-# Do NOT ignore releases folder (contains downloadable ZIPs)
-!releases/
+# Old releases folder - DO NOT commit large files here
+# Use GitHub Releases instead
+releases/*.zip
+releases/*.exe
 
 # User-specific files
 *.user
