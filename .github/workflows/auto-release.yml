@@ -68,7 +68,7 @@ jobs:
           
           if [ -z "$VERSION" ]; then
             # Fallback: generate version from date + run number
-            VERSION="$(date +%Y.%m.%d)-${{ github.run_number }}"
+            VERSION="$(date +%Y.%m.%d).${{ github.run_number }}"
           fi
           
           # Check if this version already has a release
@@ -78,6 +78,15 @@ jobs:
           else
             SHOULD_RELEASE="true"
           fi
+        fi
+        
+        # Clean version: remove v, V, V_ prefixes and any invalid characters
+        VERSION=$(echo "$VERSION" | sed 's/^[vV]_\?//' | sed 's/[^0-9.]//g' | sed 's/^\.//' | sed 's/\.$//')
+        
+        # Validate version format (must be X.Y.Z or X.Y.Z.W)
+        if ! [[ "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+(\.[0-9]+)?$ ]]; then
+          echo "Invalid version format: $VERSION, using fallback"
+          VERSION="1.0.0.${{ github.run_number }}"
         fi
         
         echo "VERSION=$VERSION" >> $GITHUB_OUTPUT

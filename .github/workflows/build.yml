@@ -50,8 +50,20 @@ jobs:
         } elseif ("${{ github.event.inputs.version }}" -ne "" -and "${{ github.event.inputs.version }}" -ne "auto") {
           $version = "${{ github.event.inputs.version }}"
         } else {
-          $version = "0.0.0-dev.${{ github.run_number }}"
+          $version = "1.0.0.${{ github.run_number }}"
         }
+        
+        # Clean version: remove v, V, V_ prefixes and invalid characters
+        $version = $version -replace '^[vV]_?', ''
+        $version = $version -replace '[^0-9.]', ''
+        $version = $version.Trim('.')
+        
+        # Validate version format (X.Y.Z or X.Y.Z.W)
+        if ($version -notmatch '^[0-9]+\.[0-9]+\.[0-9]+(\.[0-9]+)?$') {
+          Write-Host "Invalid version format: $version, using fallback"
+          $version = "1.0.0.${{ github.run_number }}"
+        }
+        
         echo "VERSION=$version" >> $env:GITHUB_OUTPUT
         echo "Version: $version"
     
