@@ -461,6 +461,52 @@
                             
                             <CheckBox Content="Use manual URL" IsChecked="{Binding UseManualUrl}" Foreground="#6C7086" FontSize="10" Margin="0,10,0,0"/>
                             <TextBox Text="{Binding ManualUrl, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource ModernTextBox}" Visibility="{Binding UseManualUrl, Converter={StaticResource BoolToVisibility}}" Margin="0,5,0,0"/>
+                            
+                            <!-- Camera Profiles Section -->
+                            <TextBlock Text="💾 CAMERA PROFILES" FontSize="8" Foreground="#585B70" FontWeight="Bold" Margin="0,12,0,4"/>
+                            <TextBlock Text="Save and load camera configurations" FontSize="8" Foreground="#585B70" Margin="0,0,0,8" TextWrapping="Wrap"/>
+                            
+                            <!-- Saved Profiles -->
+                            <Grid Margin="0,0,0,8">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <StackPanel Grid.Column="0" Margin="0,0,8,0">
+                                    <TextBlock Text="Saved Profiles" FontSize="9" Foreground="#6C7086" Margin="0,0,0,2"/>
+                                    <ComboBox ItemsSource="{Binding CameraProfiles}" 
+                                              SelectedItem="{Binding SelectedCameraProfile}"
+                                              DisplayMemberPath="DisplayName"
+                                              Style="{StaticResource ModernComboBox}"/>
+                                </StackPanel>
+                                <StackPanel Grid.Column="1" VerticalAlignment="Bottom">
+                                    <Button Content="📂 Load" Command="{Binding LoadCameraProfileCommand}" Style="{StaticResource ControlButton}" Margin="0,0,0,4"/>
+                                    <Button Content="🗑️ Delete" Command="{Binding DeleteCameraProfileCommand}" Style="{StaticResource ControlButton}"/>
+                                </StackPanel>
+                            </Grid>
+                            
+                            <!-- Quick Save -->
+                            <Grid Margin="0,0,0,8">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <Button Grid.Column="1" Content="💾 Quick Save" Command="{Binding QuickSaveCameraProfileCommand}" Style="{StaticResource SuccessButton}" FontSize="9" Padding="8,4"/>
+                            </Grid>
+                            
+                            <!-- Save New Profile -->
+                            <TextBlock Text="Save New Profile" FontSize="9" Foreground="#6C7086" Margin="0,0,0,2"/>
+                            <Grid Margin="0,0,0,8">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <TextBox Grid.Column="0" Text="{Binding NewCameraProfileName, UpdateSourceTrigger=PropertyChanged}" 
+                                         Style="{StaticResource ModernTextBox}" 
+                                         Margin="0,0,8,0" 
+                                         Foreground="#89B4FA"/>
+                                <Button Grid.Column="1" Content="💾 Save" Command="{Binding SaveCameraProfileCommand}" Style="{StaticResource PrimaryButton}" FontSize="9" Padding="8,4"/>
+                            </Grid>
                         </StackPanel>
                     </Expander>
                     

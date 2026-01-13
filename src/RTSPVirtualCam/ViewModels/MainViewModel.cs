@@ -18,6 +18,7 @@ public partial class MainViewModel : ObservableObject
     private readonly IRtspService _rtspService;
     private readonly IVirtualCameraService _virtualCameraService;
     private readonly HikvisionPtzService _ptzService;
+    private readonly CameraProfileService _cameraProfileService;
     private readonly StringBuilder _logBuilder = new();
     
     // Connection fields
@@ -101,6 +102,15 @@ public partial class MainViewModel : ObservableObject
     [ObservableProperty]
     private string _virtualCameraStatus = string.Empty;
     
+    // Camera Profiles
+    public ObservableCollection<CameraProfile> CameraProfiles { get; } = new();
+    
+    [ObservableProperty]
+    private CameraProfile? _selectedCameraProfile;
+    
+    [ObservableProperty]
+    private string _newCameraProfileName = string.Empty;
+    
     // Windows 10 SoftCam driver
     [ObservableProperty]
     private bool _useWindows10Mode;
@@ -162,6 +172,7 @@ public partial class MainViewModel : ObservableObject
         _rtspService = rtspService;
         _virtualCameraService = virtualCameraService;
         _ptzService = new HikvisionPtzService();
+        _cameraProfileService = new CameraProfileService();
         
         _rtspService.ConnectionStateChanged += OnConnectionStateChanged;
         _virtualCameraService.StateChanged += OnVirtualCameraStateChanged;
@@ -180,6 +191,9 @@ public partial class MainViewModel : ObservableObject
         {
             PtzPresets.Add(new PtzPreset { Id = i, Name = $"Preset {i}", IsEnabled = true });
         }
+        
+        // Load camera profiles
+        LoadCameraProfiles();
         
         // Initial log
         AddLog("Application started");
@@ -1308,5 +1322,163 @@ public partial class MainViewModel : ObservableObject
         {
             UrlHistory.RemoveAt(UrlHistory.Count - 1);
         }
+    }
+    
+    // Camera Profile Management
+    private void LoadCameraProfiles()
+    {
+        try
+        {
+            var profiles = _cameraProfileService.GetProfiles();
+            CameraProfiles.Clear();
+            foreach (var profile in profiles)
+            {
+                CameraProfiles.Add(profile);
+            }
+            AddLog($"Loaded {CameraProfiles.Count} camera profiles");
+        }
+        catch (Exception ex)
+        {
+            AddLog($"❌ Failed to load camera profiles: {ex.Message}");
+        }
+    }
+    
+    [RelayCommand]
+    private void SaveCameraProfile()
+    {
+        try
+        {
+            if (string.IsNullOrWhiteSpace(NewCameraProfileName))
+            {
+                AddLog("❌ Please enter a name for the camera profile");
+                return;
+            }
+            
+            var profile = _cameraProfileService.CreateFromCurrentSettings(
+                NewCameraProfileName.Trim(),
+                IpAddress,
+                Port,
+                Username,
+                Password,
+                PtzUsername,
+                PtzPassword,
+                SelectedBrand,
+                SelectedStream,
+                Channel,
+                UseManualUrl,
+                ManualUrl);
+            
+            _cameraProfileService.SaveProfile(profile);
+            LoadCameraProfiles();
+            NewCameraProfileName = string.Empty;
+            
+            AddLog($"✅ Saved camera profile: {profile.Name}");
+        }
+        catch (Exception ex)
+        {
+            AddLog($"❌ Failed to save camera profile: {ex.Message}");
+        }
+    }
+    
+    [RelayCommand]
+    private void LoadCameraProfile()
+    {
+        try
+        {
+            if (SelectedCameraProfile == null)
+            {
+                AddLog("❌ Please select a camera profile to load");
+                return;
+            }
+            
+            var profile = SelectedCameraProfile;
+            
+            // Load all settings from profile
+            IpAddress = profile.IpAddress;
+            Port = profile.Port;
+            Username = profile.Username;
+            Password = profile.Password;
+            PtzUsername = profile.PtzUsername;
+            PtzPassword = profile.PtzPassword;
+            SelectedBrand = profile.Brand;
+            SelectedStream = profile.Stream;
+            Channel = profile.Channel;
+            UseManualUrl = profile.UseManualUrl;
+            ManualUrl = profile.ManualUrl;
+            
+            AddLog($"✅ Loaded camera profile: {profile.Name}");
+        }
+        catch (Exception ex)
+        {
+            AddLog($"❌ Failed to load camera profile: {ex.Message}");
+        }
+    }
+    
+    [RelayCommand]
+    private void DeleteCameraProfile()
+    {
+        try
+        {
+            if (SelectedCameraProfile == null)
+            {
+                AddLog("❌ Please select a camera profile to delete");
+                return;
+            }
+            
+            var profileName = SelectedCameraProfile.Name;
+            _cameraProfileService.DeleteProfile(SelectedCameraProfile.Id);
+            LoadCameraProfiles();
+            SelectedCameraProfile = null;
+            
+            AddLog($"🗑️ Deleted camera profile: {profileName}");
+        }
+        catch (Exception ex)
+        {
+            AddLog($"❌ Failed to delete camera profile: {ex.Message}");
+        }
+    }
+    
+    [RelayCommand(CanExecute = nameof(CanSaveCameraProfile))]
+    private void QuickSaveCameraProfile()
+    {
+        try
+        {
+            var profileName = $"Camera {IpAddress}";
+            var existingProfile = CameraProfiles.FirstOrDefault(p => 
+                p.IpAddress == IpAddress && p.Port == Port);
+            
+            if (existingProfile != null)
+            {
+                profileName = existingProfile.Name;
+            }
+            
+            var profile = _cameraProfileService.CreateFromCurrentSettings(
+                profileName,
+                IpAddress,
+                Port,
+                Username,
+                Password,
+                PtzUsername,
+                PtzPassword,
+                SelectedBrand,
+                SelectedStream,
+                Channel,
+                UseManualUrl,
+                ManualUrl);
+            
+            _cameraProfileService.SaveProfile(profile);
+            LoadCameraProfiles();
+            
+            AddLog($"💾 Quick saved camera profile: {profile.Name}");
+        }
+        catch (Exception ex)
+        {
+            AddLog($"❌ Failed to quick save camera profile: {ex.Message}");
+        }
+    }
+    
+    private bool CanSaveCameraProfile()
+    {
+        return !string.IsNullOrWhiteSpace(IpAddress) && Port > 0;
     }
 }
