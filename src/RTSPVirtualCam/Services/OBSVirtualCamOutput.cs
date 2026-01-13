@@ -103,17 +103,8 @@ public class OBSVirtualCamOutput : IDisposable
             Log($"📊 Shared memory size: {size} bytes");
             Log($"📊 Frame offsets: [{_frameOffsets[0]}, {_frameOffsets[1]}, {_frameOffsets[2]}]");
             
-            // Check if already exists (another instance running)
-            IntPtr existing = OpenFileMappingW(FILE_MAP_READ, false, VIDEO_NAME);
-            if (existing != IntPtr.Zero)
-            {
-                CloseHandle(existing);
-                Log("❌ OBS Virtual Camera already in use by another application");
-                Log("💡 Close OBS Studio or other apps using the virtual camera");
-                return false;
-            }
-            
-            // Create shared memory using Windows API (cross-process compatible)
+            // Try to create shared memory using Windows API
+            // If it already exists, we'll take over (OBS may have left it or we're replacing another sender)
             _hMapFile = CreateFileMappingW(
                 INVALID_HANDLE_VALUE,
                 IntPtr.Zero,
@@ -122,14 +113,28 @@ public class OBSVirtualCamOutput : IDisposable
                 size,
                 VIDEO_NAME);
             
+            int createError = Marshal.GetLastWin32Error();
+            bool alreadyExisted = (createError == 183); // ERROR_ALREADY_EXISTS
+            
             if (_hMapFile == IntPtr.Zero)
             {
-                int error = Marshal.GetLastWin32Error();
-                Log($"❌ CreateFileMapping failed: error {error}");
-                return false;
+                // Try to open existing one instead
+                _hMapFile = OpenFileMappingW(FILE_MAP_ALL_ACCESS, false, VIDEO_NAME);
+                if (_hMapFile == IntPtr.Zero)
+                {
+                    Log($"❌ CreateFileMapping failed: error {createError}");
+                    return false;
+                }
+                Log($"📂 Opened existing shared memory: {VIDEO_NAME}");
             }
-            
-            Log($"✅ Created shared memory: {VIDEO_NAME}");
+            else if (alreadyExisted)
+            {
+                Log($"📂 Taking over existing shared memory: {VIDEO_NAME}");
+            }
+            else
+            {
+                Log($"✅ Created new shared memory: {VIDEO_NAME}");
+            }
             
             // Map view of file
             _pBuf = MapViewOfFile(_hMapFile, FILE_MAP_ALL_ACCESS, 0, 0, UIntPtr.Zero);

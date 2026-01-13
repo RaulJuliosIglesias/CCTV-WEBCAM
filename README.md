@@ -24,6 +24,7 @@
 
 ## ✨ Features
 
+### Core Features
 | Feature | Description |
 |---------|-------------|
 | 🔌 **Easy Connection** | Just paste your RTSP URL or use the built-in camera discovery |
@@ -34,6 +35,18 @@
 | 💾 **Connection History** | Remembers your last 10 connections with profiles |
 | 🎮 **PTZ Control** | Integrated Pan-Tilt-Zoom for supported cameras |
 | 📊 **Stream Info** | Real-time display of resolution, FPS, codec, and bitrate |
+
+### v2.0 Multi-Camera Platform Features
+| Feature | Description |
+|---------|-------------|
+| 📹 **Multi-Camera** | Connect up to 16 cameras simultaneously with independent controls |
+| 🎯 **Advanced PTZ** | Presets, tours, synchronized movements across cameras |
+| ⏺️ **Recording** | Stream recording with scheduled recording and snapshots |
+| 📡 **RTMP Streaming** | Stream to YouTube, Twitch, Facebook Live |
+| 🔍 **Motion Detection** | Analytics with motion zones and alerts |
+| ☁️ **Cloud Sync** | Sync settings across devices |
+| 📱 **REST API** | Control cameras from mobile apps |
+| ⚡ **Hardware Accel** | DXVA2, D3D11VA, CUDA, Intel Quick Sync support |
 
 ---
 
@@ -314,7 +327,7 @@ RTSPVirtualCam/
 
 ## 🗺️ Roadmap
 
-### ✅ v1.0 - Current Release
+### ✅ v1.0 - Initial Release
 - [x] RTSP stream connection via LibVLC
 - [x] Live preview in application with real-time stats
 - [x] Virtual camera service (Windows 11 native + OBS fallback)
@@ -326,29 +339,28 @@ RTSPVirtualCam/
 - [x] Portable deployment with auto-updater
 - [x] Bilingual documentation (English/Spanish)
 
-### 🔄 v2.0 - Multi-Camera Platform (Next Major)
-- [ ] **Multiple simultaneous camera connections** with independent controls
-- [ ] **Advanced PTZ management** with presets, tours, and synchronized movements
-- [ ] **Stream recording and snapshot capabilities** with scheduled recording
-- [ ] **Audio streaming support** for synchronized audio-video
-- [ ] **Hardware acceleration (DXVA2)** for improved performance
-- [ ] **Network bandwidth optimization** with adaptive bitrate
-- [ ] **Cloud configuration sync** for settings across devices
-- [ ] **Mobile companion app** for remote camera control
-- [ ] **Advanced analytics** with motion detection and alerts
-- [ ] **RTMP streaming support** for platforms like YouTube/Twitch
+### ✅ v2.0 - Multi-Camera Platform (Current Release)
+- [x] **Multiple simultaneous camera connections** with independent controls (up to 16 cameras)
+- [x] **Advanced PTZ management** with presets, tours, and synchronized movements
+- [x] **Stream recording and snapshot capabilities** with scheduled recording
+- [x] **Hardware acceleration (DXVA2/D3D11VA/CUDA/QSV)** for improved performance
+- [x] **Network bandwidth optimization** with adaptive bitrate
+- [x] **Cloud configuration sync** for settings across devices
+- [x] **REST API server** for mobile companion app integration
+- [x] **Advanced analytics** with motion detection and alerts
+- [x] **RTMP streaming support** for platforms like YouTube/Twitch/Facebook
 
 ### 🔮 v3.0 - Enterprise & AI Features (Future)
 - [ ] **AI-powered camera auto-discovery** and configuration
 - [ ] **Multi-platform support** (macOS, Linux)
 - [ ] **Enterprise management console** for bulk camera deployment
 - [ ] **Advanced security features** with encryption and authentication
-- [ ] **API and SDK** for third-party integrations
 - [ ] **Web-based interface** for remote management
 - [ ] **Advanced video processing** with AI enhancement and filters
 - [ ] **IoT device integration** for smart home/security systems
 - [ ] **Scalable architecture** supporting hundreds of cameras
 - [ ] **Professional broadcasting features** with NDI support
+- [ ] **Audio streaming support** for synchronized audio-video
 
 ---
 

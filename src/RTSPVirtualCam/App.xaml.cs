@@ -32,7 +32,7 @@ public partial class App : Application
                     retainedFileCountLimit: 7)
                 .CreateLogger();
             
-            Log.Information("RTSP VirtualCam starting...");
+            Log.Information("RTSP VirtualCam v2.0 - Multi-Camera Platform starting...");
             Log.Information($"Base Directory: {AppContext.BaseDirectory}");
             
             // Configure DI
@@ -42,7 +42,7 @@ public partial class App : Application
             
             Log.Information("Services configured successfully");
             
-            // Show main window
+            // Show main window (with v2.0 multi-camera features integrated)
             var mainWindow = _serviceProvider.GetRequiredService<MainWindow>();
             mainWindow.Show();
             
@@ -59,16 +59,79 @@ public partial class App : Application
     
     private void ConfigureServices(IServiceCollection services)
     {
-        // Services - delay RtspService creation to avoid early LibVLC init
+        // ═══════════════════════════════════════════════════════════════
+        // v1.0 Legacy Services (maintained for backward compatibility)
+        // ═══════════════════════════════════════════════════════════════
         services.AddSingleton<RtspService>();
         services.AddSingleton<IRtspService>(sp => sp.GetRequiredService<RtspService>());
         services.AddSingleton<IVirtualCameraService, VirtualCameraService>();
+        services.AddSingleton<CameraProfileService>();
         
+        // ═══════════════════════════════════════════════════════════════
+        // v2.0 Multi-Camera Platform Services
+        // ═══════════════════════════════════════════════════════════════
+        
+        // Core multi-camera service
+        services.AddSingleton<IMultiCameraService, MultiCameraService>();
+        
+        // Advanced PTZ with presets, tours, and synchronized movements
+        services.AddSingleton<IAdvancedPtzService, AdvancedPtzService>();
+        
+        // Recording and snapshots with scheduling
+        services.AddSingleton<IRecordingService, RecordingService>();
+        
+        // RTMP streaming for YouTube/Twitch/Facebook
+        services.AddSingleton<IRtmpStreamingService, RtmpStreamingService>();
+        
+        // Motion detection and analytics
+        services.AddSingleton<IMotionDetectionService, MotionDetectionService>();
+        
+        // Cloud configuration sync
+        services.AddSingleton<ICloudSyncService>(sp => 
+            new CloudSyncService(sp.GetRequiredService<CameraProfileService>()));
+        
+        // Hardware acceleration (DXVA2, D3D11VA, CUDA, QSV)
+        services.AddSingleton<IHardwareAccelerationService, HardwareAccelerationService>();
+        
+        // REST API server for mobile companion app
+        services.AddSingleton<IApiServerService>(sp => new ApiServerService(
+            sp.GetRequiredService<IMultiCameraService>(),
+            sp.GetRequiredService<IAdvancedPtzService>(),
+            sp.GetRequiredService<IRecordingService>(),
+            sp.GetRequiredService<IRtmpStreamingService>()
+        ));
+        
+        // ═══════════════════════════════════════════════════════════════
         // ViewModels
+        // ═══════════════════════════════════════════════════════════════
+        
+        // v1.0 ViewModel (single camera mode)
         services.AddTransient<MainViewModel>();
         
+        // v2.0 ViewModel (multi-camera mode)
+        services.AddTransient<MultiCameraViewModel>(sp => new MultiCameraViewModel(
+            sp.GetRequiredService<IMultiCameraService>(),
+            sp.GetRequiredService<IAdvancedPtzService>(),
+            sp.GetRequiredService<IRecordingService>(),
+            sp.GetRequiredService<IRtmpStreamingService>(),
+            sp.GetRequiredService<IMotionDetectionService>(),
+            sp.GetRequiredService<ICloudSyncService>(),
+            sp.GetRequiredService<IApiServerService>(),
+            sp.GetRequiredService<IHardwareAccelerationService>()
+        ));
+        
+        // ═══════════════════════════════════════════════════════════════
         // Views
+        // ═══════════════════════════════════════════════════════════════
         services.AddTransient<MainWindow>();
+        
+        // v2.0 Multi-Camera Window
+        services.AddTransient<MultiCameraWindow>(sp => new MultiCameraWindow(
+            sp.GetRequiredService<IMultiCameraService>(),
+            sp.GetRequiredService<IAdvancedPtzService>(),
+            sp.GetRequiredService<IRecordingService>(),
+            sp.GetRequiredService<IHardwareAccelerationService>()
+        ));
     }
     
     private void OnUnhandledException(object sender, UnhandledExceptionEventArgs e)

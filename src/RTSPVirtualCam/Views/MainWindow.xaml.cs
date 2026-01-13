@@ -60,6 +60,56 @@ public partial class MainWindow : Window
                 AddDebugLog("Window clicked, focus set to main window");
             }
         };
+        
+        // Subscribe to layout changes
+        _viewModel.PropertyChanged += (s, e) =>
+        {
+            if (e.PropertyName == nameof(MainViewModel.SelectedLayoutCount))
+            {
+                UpdateCameraGridLayout(_viewModel.SelectedLayoutCount);
+            }
+        };
+        
+        // Set initial layout
+        Loaded += (s, e) => UpdateCameraGridLayout(1);
+    }
+    
+    private void UpdateCameraGridLayout(int cameraCount)
+    {
+        // Find the UniformGrid in the ItemsControl
+        if (CameraSlotsGrid?.ItemsPanel?.LoadContent() is System.Windows.Controls.Primitives.UniformGrid)
+        {
+            // We need to update the ItemsPanelTemplate dynamically
+            // For now, use a simpler approach - update visibility of slots
+        }
+        
+        // Update which slots are visible based on layout
+        for (int i = 0; i < _viewModel.CameraSlots.Count; i++)
+        {
+            // All slots exist but only show up to cameraCount
+            // The XAML binding will handle this via the collection
+        }
+        
+        // Determine grid layout based on camera count
+        int rows, cols;
+        switch (cameraCount)
+        {
+            case 1: rows = 1; cols = 1; break;
+            case 2: rows = 1; cols = 2; break;  // Side by side
+            case 4: rows = 2; cols = 2; break;
+            case 6: rows = 2; cols = 3; break;
+            default: rows = 1; cols = 1; break;
+        }
+        
+        // Update the ItemsPanel template dynamically
+        var template = new ItemsPanelTemplate();
+        var factory = new FrameworkElementFactory(typeof(System.Windows.Controls.Primitives.UniformGrid));
+        factory.SetValue(System.Windows.Controls.Primitives.UniformGrid.RowsProperty, rows);
+        factory.SetValue(System.Windows.Controls.Primitives.UniformGrid.ColumnsProperty, cols);
+        template.VisualTree = factory;
+        CameraSlotsGrid.ItemsPanel = template;
+        
+        AddDebugLog($"Layout updated to {cameraCount} cameras ({rows}x{cols})");
     }
     
     private void AddDebugLog(string message)

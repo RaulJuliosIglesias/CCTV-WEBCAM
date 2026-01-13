@@ -7,6 +7,12 @@
     <UseWPF>true</UseWPF>
     <RootNamespace>RTSPVirtualCam</RootNamespace>
     <RuntimeIdentifier>win-x64</RuntimeIdentifier>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    
+    <!-- Version 2.0 - Multi-Camera Platform -->
+    <Version>2.0.0</Version>
+    <FileVersion>2.0.0.0</FileVersion>
+    <AssemblyVersion>2.0.0.0</AssemblyVersion>
     
     <!-- For portable deployment, we don't use single file because LibVLC needs native DLLs -->
     <SelfContained>true</SelfContained>
@@ -30,11 +36,14 @@
     <PackageReference Include="Serilog.Sinks.File" Version="5.0.0" />
     <PackageReference Include="Serilog.Sinks.Console" Version="5.0.1" />
     
-    <!-- System Management for WMI queries -->
+    <!-- System Management for WMI queries and hardware info -->
     <PackageReference Include="System.Management" Version="8.0.0" />
     
     <!-- DI Container -->
     <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="8.0.0" />
+    
+    <!-- v2.0: System.Drawing for image processing (snapshots, recording) -->
+    <PackageReference Include="System.Drawing.Common" Version="8.0.0" />
   </ItemGroup>
 
   <ItemGroup>

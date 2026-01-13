@@ -1,50 +1,98 @@
 using System;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
+using System.Threading;
 
 namespace RTSPVirtualCam.Services;
 
 /// <summary>
-/// Sends frames to Unity Capture virtual camera.
-/// Unity Capture supports multiple virtual cameras with custom names.
+/// Sends frames to Unity Capture virtual camera using direct shared memory.
+/// Unity Capture supports multiple virtual cameras (up to 10).
 /// Each camera uses its own shared memory identified by device number.
+/// Shared memory naming: UnityCapture_Data0, UnityCapture_Data1, etc.
 /// </summary>
 public class UnityCaptureOutput : IDisposable
 {
-    // Unity Capture Plugin DLL imports
-    [DllImport("UnityCapturePlugin.dll", CallingConvention = CallingConvention.Cdecl)]
-    private static extern int UnityCaptureInterface_Query([MarshalAs(UnmanagedType.LPWStr)] string deviceName);
+    // Windows API for shared memory
+    [DllImport("kernel32.dll", SetLastError = true, CharSet = CharSet.Ansi)]
+    private static extern IntPtr OpenFileMappingA(uint dwDesiredAccess, bool bInheritHandle, string lpName);
     
-    [DllImport("UnityCapturePlugin.dll", CallingConvention = CallingConvention.Cdecl)]
-    private static extern int UnityCaptureInterface_SendFrame(
-        int deviceId,
-        IntPtr data,
-        int width,
-        int height,
-        int stride,
-        int format,
-        int mirrorHorizontal,
-        int mirrorVertical,
-        int timeout);
+    [DllImport("kernel32.dll", SetLastError = true, CharSet = CharSet.Ansi)]
+    private static extern IntPtr CreateFileMappingA(IntPtr hFile, IntPtr lpAttributes, uint flProtect, uint dwMaximumSizeHigh, uint dwMaximumSizeLow, string lpName);
     
-    // Format constants for Unity Capture
-    private const int FORMAT_ARGB = 0;
-    private const int FORMAT_BGRA = 1;
-    private const int FORMAT_RGBA = 2;
-    private const int FORMAT_RGB24 = 3;
-    private const int FORMAT_BGR24 = 4;
+    [DllImport("kernel32.dll", SetLastError = true)]
+    private static extern IntPtr MapViewOfFile(IntPtr hFileMappingObject, uint dwDesiredAccess, uint dwFileOffsetHigh, uint dwFileOffsetLow, UIntPtr dwNumberOfBytesToMap);
     
-    private int _deviceId = -1;
+    [DllImport("kernel32.dll", SetLastError = true)]
+    private static extern bool UnmapViewOfFile(IntPtr lpBaseAddress);
+    
+    [DllImport("kernel32.dll", SetLastError = true)]
+    private static extern bool CloseHandle(IntPtr hObject);
+    
+    [DllImport("kernel32.dll", SetLastError = true, CharSet = CharSet.Ansi)]
+    private static extern IntPtr OpenMutexA(uint dwDesiredAccess, bool bInheritHandle, string lpName);
+    
+    [DllImport("kernel32.dll", SetLastError = true, CharSet = CharSet.Ansi)]
+    private static extern IntPtr CreateMutexA(IntPtr lpMutexAttributes, bool bInitialOwner, string lpName);
+    
+    [DllImport("kernel32.dll", SetLastError = true)]
+    private static extern uint WaitForSingleObject(IntPtr hHandle, uint dwMilliseconds);
+    
+    [DllImport("kernel32.dll", SetLastError = true)]
+    private static extern bool ReleaseMutex(IntPtr hMutex);
+    
+    [DllImport("kernel32.dll", SetLastError = true, CharSet = CharSet.Ansi)]
+    private static extern IntPtr OpenEventA(uint dwDesiredAccess, bool bInheritHandle, string lpName);
+    
+    [DllImport("kernel32.dll", SetLastError = true, CharSet = CharSet.Ansi)]
+    private static extern IntPtr CreateEventA(IntPtr lpEventAttributes, bool bManualReset, bool bInitialState, string lpName);
+    
+    [DllImport("kernel32.dll", SetLastError = true)]
+    private static extern bool SetEvent(IntPtr hEvent);
+    
+    // Constants
+    private const uint FILE_MAP_WRITE = 0x0002;
+    private const uint PAGE_READWRITE = 0x04;
+    private const uint SYNCHRONIZE = 0x00100000;
+    private const uint EVENT_MODIFY_STATE = 0x0002;
+    private const uint INFINITE = 0xFFFFFFFF;
+    private static readonly IntPtr INVALID_HANDLE_VALUE = new IntPtr(-1);
+    
+    // Max size for 4K resolution (RGBA 16-bit per pixel)
+    private const int MAX_SHARED_IMAGE_SIZE = 3840 * 2160 * 4 * 2;
+    
+    // Shared memory header structure (matches Unity Capture shared.inl)
+    [StructLayout(LayoutKind.Sequential)]
+    private struct SharedMemHeader
+    {
+        public uint maxSize;
+        public int width;
+        public int height;
+        public int stride;
+        public int format;
+        public int resizemode;
+        public int mirrormode;
+        public int timeout;
+        // data follows after this header
+    }
+    
+    private int _deviceNumber;
     private string _deviceName = string.Empty;
     private int _width;
     private int _height;
     private bool _isRunning;
-    private IntPtr _frameBuffer = IntPtr.Zero;
-    private int _bufferSize;
+    
+    private IntPtr _hMutex = IntPtr.Zero;
+    private IntPtr _hWantFrameEvent = IntPtr.Zero;
+    private IntPtr _hSentFrameEvent = IntPtr.Zero;
+    private IntPtr _hSharedFile = IntPtr.Zero;
+    private IntPtr _pSharedBuf = IntPtr.Zero;
+    
+    private long _frameCount;
     
     public bool IsRunning => _isRunning;
     public string DeviceName => _deviceName;
-    public int DeviceId => _deviceId;
+    public int DeviceNumber => _deviceNumber;
     
     public event Action<string>? OnLog;
     
@@ -53,52 +101,81 @@ public class UnityCaptureOutput : IDisposable
     /// <summary>
     /// Start sending frames to a Unity Capture virtual camera device.
     /// </summary>
-    /// <param name="deviceNumber">Device number (0-9). Each number creates a separate virtual camera.</param>
+    /// <param name="deviceNumber">Device number (0-9). Each number is a separate virtual camera.</param>
     /// <param name="width">Frame width</param>
     /// <param name="height">Frame height</param>
     public bool Start(int deviceNumber, int width, int height)
     {
         try
         {
-            _deviceName = $"Unity Video Capture #{deviceNumber}";
+            _deviceNumber = deviceNumber;
+            _deviceName = deviceNumber == 0 ? "Unity Video Capture" : $"Unity Video Capture #{deviceNumber}";
             _width = width;
             _height = height;
+            _frameCount = 0;
             
             Log($"🎥 Initializing Unity Capture device #{deviceNumber}...");
             
-            // Query the device to get its ID
-            _deviceId = UnityCaptureInterface_Query(_deviceName);
+            // Build shared memory names based on device number
+            char capNumChar = deviceNumber == 0 ? '\0' : (char)('0' + deviceNumber);
+            string mutexName = deviceNumber == 0 ? "UnityCapture_Mutx" : $"UnityCapture_Mutx{capNumChar}";
+            string wantEventName = deviceNumber == 0 ? "UnityCapture_Want" : $"UnityCapture_Want{capNumChar}";
+            string sentEventName = deviceNumber == 0 ? "UnityCapture_Sent" : $"UnityCapture_Sent{capNumChar}";
+            string sharedDataName = deviceNumber == 0 ? "UnityCapture_Data" : $"UnityCapture_Data{capNumChar}";
             
-            if (_deviceId < 0)
+            // Open or create mutex
+            _hMutex = OpenMutexA(SYNCHRONIZE, false, mutexName);
+            if (_hMutex == IntPtr.Zero)
             {
-                Log($"⚠️ Device not registered. Trying default device name...");
-                // Try with default Unity Capture device name format
-                _deviceName = deviceNumber == 0 ? "Unity Video Capture" : $"Unity Video Capture #{deviceNumber}";
-                _deviceId = UnityCaptureInterface_Query(_deviceName);
+                Log($"⚠️ Unity Capture device #{deviceNumber} not active (no receiver)");
+                Log($"💡 Make sure a video app is requesting the camera");
+                // We can still create the shared memory and wait for a receiver
             }
             
-            if (_deviceId < 0)
+            // Create events for frame synchronization
+            _hWantFrameEvent = CreateEventA(IntPtr.Zero, false, false, wantEventName);
+            _hSentFrameEvent = OpenEventA(EVENT_MODIFY_STATE, false, sentEventName);
+            
+            // Create shared memory
+            int totalSize = Marshal.SizeOf<SharedMemHeader>() + MAX_SHARED_IMAGE_SIZE;
+            _hSharedFile = CreateFileMappingA(INVALID_HANDLE_VALUE, IntPtr.Zero, PAGE_READWRITE, 0, (uint)totalSize, sharedDataName);
+            
+            if (_hSharedFile == IntPtr.Zero)
             {
-                Log($"❌ Unity Capture device '{_deviceName}' not found");
-                Log($"💡 Make sure Unity Capture is installed (run Install.bat)");
+                Log($"❌ Failed to create shared memory for device #{deviceNumber}");
                 return false;
             }
             
-            // Allocate frame buffer for BGRA
-            _bufferSize = width * height * 4;
-            _frameBuffer = Marshal.AllocHGlobal(_bufferSize);
+            _pSharedBuf = MapViewOfFile(_hSharedFile, FILE_MAP_WRITE, 0, 0, UIntPtr.Zero);
+            
+            if (_pSharedBuf == IntPtr.Zero)
+            {
+                Log($"❌ Failed to map shared memory for device #{deviceNumber}");
+                CloseHandle(_hSharedFile);
+                _hSharedFile = IntPtr.Zero;
+                return false;
+            }
+            
+            // Initialize header
+            var header = new SharedMemHeader
+            {
+                maxSize = MAX_SHARED_IMAGE_SIZE,
+                width = 0,
+                height = 0,
+                stride = 0,
+                format = 0, // FORMAT_UINT8
+                resizemode = 0,
+                mirrormode = 0,
+                timeout = 1000
+            };
+            Marshal.StructureToPtr(header, _pSharedBuf, false);
             
             _isRunning = true;
-            Log($"✅ Unity Capture device ready: {_deviceName} (ID: {_deviceId})");
+            Log($"✅ Unity Capture device #{deviceNumber} ready");
             Log($"📐 Resolution: {width}x{height}");
+            Log($"📝 Shared memory: {sharedDataName}");
             
             return true;
-        }
-        catch (DllNotFoundException)
-        {
-            Log("❌ UnityCapturePlugin.dll not found");
-            Log("💡 Make sure the DLL is in the scripts/softcam folder");
-            return false;
         }
         catch (Exception ex)
         {
@@ -112,30 +189,56 @@ public class UnityCaptureOutput : IDisposable
     /// </summary>
     public void SendFrame(byte[] bgraData)
     {
-        if (!_isRunning || _deviceId < 0 || _frameBuffer == IntPtr.Zero)
+        if (!_isRunning || _pSharedBuf == IntPtr.Zero)
             return;
         
         try
         {
-            // Copy frame data to unmanaged buffer
-            Marshal.Copy(bgraData, 0, _frameBuffer, Math.Min(bgraData.Length, _bufferSize));
+            int dataSize = _width * _height * 4;
+            if (bgraData.Length < dataSize)
+                return;
             
-            // Send frame to Unity Capture (BGRA format, 1000ms timeout)
-            int result = UnityCaptureInterface_SendFrame(
-                _deviceId,
-                _frameBuffer,
-                _width,
-                _height,
-                _width * 4, // stride
-                FORMAT_BGRA,
-                0, // no horizontal mirror
-                0, // no vertical mirror
-                1000); // timeout ms
-            
-            if (result != 0)
+            // Lock mutex if available
+            if (_hMutex != IntPtr.Zero)
             {
-                // Non-zero result indicates error
-                // Log($"⚠️ Send frame result: {result}");
+                WaitForSingleObject(_hMutex, INFINITE);
+            }
+            
+            try
+            {
+                // Write header
+                int headerSize = Marshal.SizeOf<SharedMemHeader>();
+                Marshal.WriteInt32(_pSharedBuf, 4, _width);  // width at offset 4
+                Marshal.WriteInt32(_pSharedBuf, 8, _height); // height at offset 8
+                Marshal.WriteInt32(_pSharedBuf, 12, _width * 4); // stride at offset 12
+                Marshal.WriteInt32(_pSharedBuf, 16, 0); // format = FORMAT_UINT8
+                Marshal.WriteInt32(_pSharedBuf, 20, 0); // resizemode
+                Marshal.WriteInt32(_pSharedBuf, 24, 0); // mirrormode
+                Marshal.WriteInt32(_pSharedBuf, 28, 1000); // timeout
+                
+                // Write frame data after header
+                IntPtr dataPtr = IntPtr.Add(_pSharedBuf, headerSize);
+                Marshal.Copy(bgraData, 0, dataPtr, dataSize);
+            }
+            finally
+            {
+                // Unlock mutex
+                if (_hMutex != IntPtr.Zero)
+                {
+                    ReleaseMutex(_hMutex);
+                }
+            }
+            
+            // Signal that frame is ready
+            if (_hSentFrameEvent != IntPtr.Zero)
+            {
+                SetEvent(_hSentFrameEvent);
+            }
+            
+            _frameCount++;
+            if (_frameCount % 100 == 0)
+            {
+                Log($"📹 [{_deviceName}] Sent {_frameCount} frames");
             }
         }
         catch (Exception ex)
@@ -148,14 +251,37 @@ public class UnityCaptureOutput : IDisposable
     {
         _isRunning = false;
         
-        if (_frameBuffer != IntPtr.Zero)
+        if (_pSharedBuf != IntPtr.Zero)
         {
-            Marshal.FreeHGlobal(_frameBuffer);
-            _frameBuffer = IntPtr.Zero;
+            UnmapViewOfFile(_pSharedBuf);
+            _pSharedBuf = IntPtr.Zero;
         }
         
-        _deviceId = -1;
-        Log($"Unity Capture device '{_deviceName}' stopped");
+        if (_hSharedFile != IntPtr.Zero)
+        {
+            CloseHandle(_hSharedFile);
+            _hSharedFile = IntPtr.Zero;
+        }
+        
+        if (_hMutex != IntPtr.Zero)
+        {
+            CloseHandle(_hMutex);
+            _hMutex = IntPtr.Zero;
+        }
+        
+        if (_hWantFrameEvent != IntPtr.Zero)
+        {
+            CloseHandle(_hWantFrameEvent);
+            _hWantFrameEvent = IntPtr.Zero;
+        }
+        
+        if (_hSentFrameEvent != IntPtr.Zero)
+        {
+            CloseHandle(_hSentFrameEvent);
+            _hSentFrameEvent = IntPtr.Zero;
+        }
+        
+        Log($"⏹ Unity Capture device #{_deviceNumber} stopped");
     }
     
     public void Dispose()

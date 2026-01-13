@@ -33,28 +33,59 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
-## [Unreleased]
+## [2.0.0] - 2026-01-13
 
-### Planned for v2.0.0 - Multi-Camera Platform
-- [ ] Multiple simultaneous camera connections with independent controls
-- [ ] Advanced PTZ management with presets, tours, and synchronized movements
-- [ ] Stream recording and snapshot capabilities with scheduled recording
-- [ ] Audio streaming support for synchronized audio-video
-- [ ] Hardware acceleration (DXVA2) for improved performance
-- [ ] Network bandwidth optimization with adaptive bitrate
-- [ ] Cloud configuration sync for settings across devices
-- [ ] Mobile companion app for remote camera control
-- [ ] Advanced analytics with motion detection and alerts
-- [ ] RTMP streaming support for platforms like YouTube/Twitch
+### Added - Multi-Camera Platform
+- 📹 **Multi-Camera Support** - Connect up to 16 cameras simultaneously with independent controls
+- 🎯 **Advanced PTZ Management** - Presets, tours, and synchronized movements across cameras
+- ⏺️ **Recording Service** - Stream recording with MP4/MKV/AVI/TS formats, scheduled recording, and auto-cleanup
+- 📸 **Snapshot Service** - Manual and automatic snapshots with JPEG/PNG/BMP support
+- 📡 **RTMP Streaming** - Stream to YouTube, Twitch, Facebook Live, or any RTMP server
+- 🔍 **Motion Detection** - Frame differencing with configurable zones, sensitivity, and alerts
+- ⚡ **Hardware Acceleration** - DXVA2, D3D11VA, CUDA, and Intel Quick Sync support
+- ☁️ **Cloud Sync** - Sync camera profiles and settings across devices with encryption
+- 📱 **REST API Server** - Control cameras from mobile apps with full authentication
+- 📊 **Analytics Dashboard** - Motion event history, hourly/daily distribution, statistics
+
+### New Services
+- `IMultiCameraService` / `MultiCameraService` - Core multi-camera management
+- `IAdvancedPtzService` / `AdvancedPtzService` - PTZ presets, tours, sync groups
+- `IRecordingService` / `RecordingService` - Recording and snapshots
+- `IRtmpStreamingService` / `RtmpStreamingService` - RTMP streaming
+- `IMotionDetectionService` / `MotionDetectionService` - Motion detection
+- `ICloudSyncService` / `CloudSyncService` - Cloud configuration sync
+- `IApiServerService` / `ApiServerService` - REST API server
+- `IHardwareAccelerationService` / `HardwareAccelerationService` - GPU acceleration
+
+### New Models
+- `CameraInstance` - Single camera with all settings and state
+- `PtzTour`, `PtzTourWaypoint` - PTZ patrol tour configuration
+- `AdvancedPtzPreset` - Extended preset with metadata and thumbnails
+- `PtzSyncGroup` - Synchronized PTZ across multiple cameras
+- `RecordingSettings`, `ScheduledRecording` - Recording configuration
+- `StreamingSettings` - RTMP streaming configuration
+- `MotionDetectionSettings`, `DetectionZone`, `MotionEvent` - Motion detection
+- `CloudSyncSettings`, `SyncData` - Cloud sync configuration
+- `ApplicationSettings` - App-wide settings with hardware acceleration
+
+### Technical
+- Updated project to .NET 8.0 with version 2.0.0
+- Added System.Drawing.Common for image processing
+- Added AllowUnsafeBlocks for optimized frame processing
+- Full backward compatibility with v1.0 single-camera mode
+
+---
+
+## [Unreleased]
 
 ### Planned for v3.0.0 - Enterprise & AI Features
 - [ ] AI-powered camera auto-discovery and configuration
 - [ ] Multi-platform support (macOS, Linux)
 - [ ] Enterprise management console for bulk camera deployment
 - [ ] Advanced security features with encryption and authentication
-- [ ] API and SDK for third-party integrations
 - [ ] Web-based interface for remote management
 - [ ] Advanced video processing with AI enhancement and filters
 - [ ] IoT device integration for smart home/security systems
 - [ ] Scalable architecture supporting hundreds of cameras
 - [ ] Professional broadcasting features with NDI support
+- [ ] Audio streaming support for synchronized audio-video

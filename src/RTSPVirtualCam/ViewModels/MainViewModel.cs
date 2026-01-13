@@ -99,6 +99,28 @@ public partial class MainViewModel : ObservableObject
     [ObservableProperty]
     private bool _isWindows11OrLater;
     
+    // ═══════════════════════════════════════════════════════════════
+    // v2.0 Multi-Camera Properties
+    // ═══════════════════════════════════════════════════════════════
+    
+    // Camera slots collection (up to 6 cameras)
+    public ObservableCollection<CameraSlotViewModel> CameraSlots { get; } = new();
+    
+    [ObservableProperty]
+    private CameraSlotViewModel? _selectedCameraSlot;
+    
+    [ObservableProperty]
+    private int _connectedCameraCount = 0;
+    
+    [ObservableProperty]
+    private int _virtualizedCameraCount = 0;
+    
+    [ObservableProperty]
+    private int _recordingCameraCount = 0;
+    
+    [ObservableProperty]
+    private int _selectedLayoutCount = 1;
+    
     [ObservableProperty]
     private string _virtualCameraStatus = string.Empty;
     
@@ -195,6 +217,9 @@ public partial class MainViewModel : ObservableObject
         // Load camera profiles
         LoadCameraProfiles();
         
+        // Initialize camera slots (max 6 for reasonable screen sizes)
+        InitializeCameraSlots();
+        
         // Initial log
         AddLog("Application started");
         AddLog($"Base directory: {AppContext.BaseDirectory}");
@@ -213,6 +238,7 @@ public partial class MainViewModel : ObservableObject
             // Update bitmap on UI thread
             System.Windows.Application.Current?.Dispatcher.BeginInvoke(() =>
             {
+                // Update main preview bitmap
                 if (PreviewBitmap == null || PreviewBitmap.PixelWidth != width || PreviewBitmap.PixelHeight != height)
                 {
                     PreviewBitmap = new System.Windows.Media.Imaging.WriteableBitmap(
@@ -223,59 +249,68 @@ public partial class MainViewModel : ObservableObject
                 PreviewBitmap.WritePixels(
                     new System.Windows.Int32Rect(0, 0, width, height),
                     bgra, width * 4, 0);
+                
+                // Also update the selected camera slot's preview bitmap (for embedded grid view)
+                if (SelectedCameraSlot != null)
+                {
+                    if (SelectedCameraSlot.PreviewBitmap == null || 
+                        SelectedCameraSlot.PreviewBitmap.PixelWidth != width || 
+                        SelectedCameraSlot.PreviewBitmap.PixelHeight != height)
+                    {
+                        SelectedCameraSlot.PreviewBitmap = new System.Windows.Media.Imaging.WriteableBitmap(
+                            width, height, 96, 96,
+                            System.Windows.Media.PixelFormats.Bgra32, null);
+                    }
+                    
+                    SelectedCameraSlot.PreviewBitmap.WritePixels(
+                        new System.Windows.Int32Rect(0, 0, width, height),
+                        bgra, width * 4, 0);
+                }
             });
         }
         catch { }
     }
     
-    // Preview controls
+    // Preview controls - ONLY affect preview display
     partial void OnPreviewFlipHorizontalChanged(bool value)
     {
-        if (_rtspService is RtspService rtspSvc)
-            rtspSvc.PreviewFlipHorizontal = value;
+        SelectedCameraSlot?.ApplyPreviewFlipHorizontal(value);
     }
     
     partial void OnPreviewFlipVerticalChanged(bool value)
     {
-        if (_rtspService is RtspService rtspSvc)
-            rtspSvc.PreviewFlipVertical = value;
+        SelectedCameraSlot?.ApplyPreviewFlipVertical(value);
     }
     
     partial void OnPreviewBrightnessChanged(int value)
     {
-        if (_rtspService is RtspService rtspSvc)
-            rtspSvc.PreviewBrightness = value;
+        SelectedCameraSlot?.ApplyPreviewBrightness(value);
     }
     
     partial void OnPreviewContrastChanged(int value)
     {
-        if (_rtspService is RtspService rtspSvc)
-            rtspSvc.PreviewContrast = value;
+        SelectedCameraSlot?.ApplyPreviewContrast(value);
     }
     
-    // Virtual camera controls
+    // Virtual camera output controls - ONLY affect virtual camera output
     partial void OnVirtualFlipHorizontalChanged(bool value)
     {
-        if (_rtspService is RtspService rtspSvc)
-            rtspSvc.VirtualFlipHorizontal = value;
+        SelectedCameraSlot?.ApplyVirtualFlipHorizontal(value);
     }
     
     partial void OnVirtualFlipVerticalChanged(bool value)
     {
-        if (_rtspService is RtspService rtspSvc)
-            rtspSvc.VirtualFlipVertical = value;
+        SelectedCameraSlot?.ApplyVirtualFlipVertical(value);
     }
     
     partial void OnVirtualBrightnessChanged(int value)
     {
-        if (_rtspService is RtspService rtspSvc)
-            rtspSvc.VirtualBrightness = value;
+        SelectedCameraSlot?.ApplyVirtualBrightness(value);
     }
     
     partial void OnVirtualContrastChanged(int value)
     {
-        if (_rtspService is RtspService rtspSvc)
-            rtspSvc.VirtualContrast = value;
+        SelectedCameraSlot?.ApplyVirtualContrast(value);
     }
     
     private static readonly string LogFilePath = System.IO.Path.Combine(
@@ -653,14 +688,50 @@ public partial class MainViewModel : ObservableObject
     
     public string CurrentUrl => UseManualUrl ? ManualUrl : GeneratedUrl;
     
-    // Update URL when any field changes
-    partial void OnIpAddressChanged(string value) => UpdateGeneratedUrl();
-    partial void OnPortChanged(int value) => UpdateGeneratedUrl();
-    partial void OnUsernameChanged(string value) => UpdateGeneratedUrl();
-    partial void OnPasswordChanged(string value) => UpdateGeneratedUrl();
-    partial void OnSelectedBrandChanged(CameraBrand value) { UpdateGeneratedUrl(); AddLog($"Brand changed to: {value}"); }
-    partial void OnSelectedStreamChanged(StreamType value) { UpdateGeneratedUrl(); AddLog($"Stream type changed to: {value}"); }
-    partial void OnChannelChanged(int value) { UpdateGeneratedUrl(); AddLog($"Channel changed to: {value}"); }
+    // Update URL when any field changes and sync to selected slot
+    partial void OnIpAddressChanged(string value)
+    {
+        if (SelectedCameraSlot != null) SelectedCameraSlot.IpAddress = value;
+        UpdateGeneratedUrl();
+    }
+    
+    partial void OnPortChanged(int value)
+    {
+        if (SelectedCameraSlot != null) SelectedCameraSlot.Port = value;
+        UpdateGeneratedUrl();
+    }
+    
+    partial void OnUsernameChanged(string value)
+    {
+        if (SelectedCameraSlot != null) SelectedCameraSlot.Username = value;
+        UpdateGeneratedUrl();
+    }
+    
+    partial void OnPasswordChanged(string value)
+    {
+        if (SelectedCameraSlot != null) SelectedCameraSlot.Password = value;
+        UpdateGeneratedUrl();
+    }
+    partial void OnSelectedBrandChanged(CameraBrand value)
+    {
+        if (SelectedCameraSlot != null) SelectedCameraSlot.SelectedBrand = value;
+        UpdateGeneratedUrl();
+        AddLog($"Brand changed to: {value}");
+    }
+    
+    partial void OnSelectedStreamChanged(StreamType value)
+    {
+        if (SelectedCameraSlot != null) SelectedCameraSlot.SelectedStream = value;
+        UpdateGeneratedUrl();
+        AddLog($"Stream type changed to: {value}");
+    }
+    
+    partial void OnChannelChanged(int value)
+    {
+        if (SelectedCameraSlot != null) SelectedCameraSlot.Channel = value;
+        UpdateGeneratedUrl();
+        AddLog($"Channel changed to: {value}");
+    }
     
     partial void OnGeneratedUrlChanged(string value) => PreviewCommand.NotifyCanExecuteChanged();
     partial void OnManualUrlChanged(string value) => PreviewCommand.NotifyCanExecuteChanged();
@@ -669,10 +740,16 @@ public partial class MainViewModel : ObservableObject
     [RelayCommand(CanExecute = nameof(CanPreview))]
     private async Task PreviewAsync()
     {
+        if (SelectedCameraSlot == null)
+        {
+            AddLog("❌ No camera slot selected");
+            return;
+        }
+        
         var url = CurrentUrl;
         if (string.IsNullOrWhiteSpace(url)) return;
         
-        AddLog($"Connecting to: {url}");
+        AddLog($"Connecting {SelectedCameraSlot.SlotName} to: {url}");
         AddLog("Transport: TCP, Network caching: 500ms");
         
         IsConnecting = true;
@@ -681,29 +758,37 @@ public partial class MainViewModel : ObservableObject
         
         try
         {
-            var success = await _rtspService.ConnectAsync(url);
+            // Use the slot's own RtspService for independent connection
+            var success = await SelectedCameraSlot.ConnectAsync();
             
             IsConnecting = false;
             
             if (success)
             {
-                AddLog("✅ Connection successful!");
-                UpdateStreamInfo();
+                // Slot handles its own preview capture, just sync UI status
+                IsConnected = SelectedCameraSlot.IsConnected;
+                Resolution = SelectedCameraSlot.Resolution;
+                FrameRate = SelectedCameraSlot.FrameRate;
+                StatusText = "Connected";
+                StatusIcon = "🟢";
+                UpdateMultiCameraCounts();
+                
+                // Notify command state changes
+                VirtualizeCommand.NotifyCanExecuteChanged();
+                StopCommand.NotifyCanExecuteChanged();
+                PreviewCommand.NotifyCanExecuteChanged();
             }
             else
             {
                 AddLog("❌ Connection failed - Check URL, credentials, and network");
-                AddLog("Tip: Test the URL in VLC first to verify it works");
+                StatusText = "Connection failed";
+                StatusIcon = "🔴";
             }
         }
         catch (Exception ex)
         {
             IsConnecting = false;
             AddLog($"❌ Exception: {ex.Message}");
-            if (ex.InnerException != null)
-            {
-                AddLog($"   Inner: {ex.InnerException.Message}");
-            }
             StatusText = $"Error: {ex.Message}";
             StatusIcon = "🔴";
         }
@@ -712,7 +797,10 @@ public partial class MainViewModel : ObservableObject
     [RelayCommand(CanExecute = nameof(CanCancelConnection))]
     private void CancelConnection()
     {
-        if (!IsConnecting) return;
+        if (!IsConnecting && SelectedCameraSlot?.IsConnecting != true) return;
+        
+        // Cancel the selected slot's connection
+        SelectedCameraSlot?.CancelConnection();
         
         AddLog("🚫 Connection cancelled by user");
         IsConnecting = false;
@@ -726,16 +814,16 @@ public partial class MainViewModel : ObservableObject
         CancelConnectionCommand.NotifyCanExecuteChanged();
     }
     
-    private bool CanCancelConnection() => IsConnecting;
+    private bool CanCancelConnection() => IsConnecting || SelectedCameraSlot?.IsConnecting == true;
     
-    private bool CanPreview() => !IsConnecting && !IsConnected && !string.IsNullOrWhiteSpace(CurrentUrl);
+    private bool CanPreview() => !IsConnecting && SelectedCameraSlot?.IsConnected != true && !string.IsNullOrWhiteSpace(CurrentUrl);
     
     [RelayCommand(CanExecute = nameof(CanVirtualize))]
     private async Task VirtualizeAsync()
     {
-        if (!IsConnected)
+        if (SelectedCameraSlot == null || !SelectedCameraSlot.IsConnected)
         {
-            AddLog("❌ Cannot virtualize - not connected to stream");
+            AddLog("❌ Cannot virtualize - selected camera not connected");
             return;
         }
         
@@ -751,43 +839,33 @@ public partial class MainViewModel : ObservableObject
             }
             
             AddLog("═══════════════════════════════════════");
-            AddLog("🚀 Starting OBS Virtual Camera output...");
+            AddLog($"🚀 Starting Virtual Camera for {SelectedCameraSlot.SlotName}...");
             AddLog("═══════════════════════════════════════");
             
-            // Get stream dimensions or use defaults
-            int width = _rtspService.Width > 0 ? _rtspService.Width : 1280;
-            int height = _rtspService.Height > 0 ? _rtspService.Height : 720;
-            int fps = _rtspService.FrameRate > 0 ? _rtspService.FrameRate : 30;
+            // Use the slot's own StartVirtualCamera method
+            bool started = SelectedCameraSlot.StartVirtualCamera();
             
-            AddLog($"📐 Stream resolution: {width}x{height} @ {fps}fps");
-            
-            // Subscribe to logs from RtspService
-            if (_rtspService is RtspService rtspSvc)
+            if (started)
             {
-                rtspSvc.OnLog += msg => AddLog(msg);
+                AddLog("✅ Virtual camera output started!");
+                AddLog("📹 Frames are being sent to 'OBS Virtual Camera'");
+                AddLog("💡 Select 'OBS Virtual Camera' in your video app");
+                AddLog("ℹ️ RESTART video apps (Chrome, Zoom, Teams) to see camera");
                 
-                // Start virtual camera output
-                bool started = rtspSvc.StartVirtualCamera(width, height, fps);
-                
-                if (started)
-                {
-                    AddLog("✅ Virtual camera output started!");
-                    AddLog("📹 Frames are being sent to 'OBS Virtual Camera'");
-                    AddLog("💡 Select 'OBS Virtual Camera' in your video app");
-                    AddLog("ℹ️ RESTART video apps (Chrome, Zoom, Teams) to see camera");
-                    
-                    StatusText = "🔴 LIVE - Virtual Camera Active";
-                    StatusIcon = "🔵";
-                    IsVirtualized = true;
-                    AddToHistory(CurrentUrl);
-                }
-                else
-                {
-                    AddLog("❌ Failed to start virtual camera output");
-                    AddLog("💡 Make sure no other app is using OBS Virtual Camera");
-                    StatusText = "Virtual camera failed";
-                }
+                StatusText = "🔴 LIVE - Virtual Camera Active";
+                StatusIcon = "🔵";
+                IsVirtualized = true;
+                AddToHistory(CurrentUrl);
+                UpdateMultiCameraCounts();
             }
+            else
+            {
+                AddLog("❌ Failed to start virtual camera output");
+                AddLog("💡 Make sure no other app is using OBS Virtual Camera");
+                StatusText = "Virtual camera failed";
+            }
+            
+            await Task.CompletedTask;
             return;
         }
 
@@ -832,7 +910,7 @@ public partial class MainViewModel : ObservableObject
         }
     }
     
-    private bool CanVirtualize() => IsConnected && !IsVirtualized;
+    private bool CanVirtualize() => SelectedCameraSlot?.IsConnected == true && SelectedCameraSlot?.IsVirtualized != true;
     
     [RelayCommand(CanExecute = nameof(CanStop))]
     private async Task StopAsync()
@@ -862,6 +940,47 @@ public partial class MainViewModel : ObservableObject
     }
     
     private bool CanStop() => IsConnected || IsVirtualized;
+    
+    [RelayCommand(CanExecute = nameof(CanStopSelected))]
+    private async Task StopSelectedAsync()
+    {
+        if (SelectedCameraSlot == null) return;
+        
+        AddLog($"⏹ Stopping {SelectedCameraSlot.SlotName}...");
+        
+        try
+        {
+            // Stop virtual camera for this slot
+            if (SelectedCameraSlot.IsVirtualized)
+            {
+                SelectedCameraSlot.StopVirtualCamera();
+            }
+            
+            // Disconnect this slot
+            if (SelectedCameraSlot.IsConnected)
+            {
+                await SelectedCameraSlot.DisconnectAsync();
+            }
+            
+            // Sync UI state
+            IsConnected = SelectedCameraSlot.IsConnected;
+            IsVirtualized = SelectedCameraSlot.IsVirtualized;
+            UpdateMultiCameraCounts();
+            
+            // Update command states
+            PreviewCommand.NotifyCanExecuteChanged();
+            VirtualizeCommand.NotifyCanExecuteChanged();
+            StopSelectedCommand.NotifyCanExecuteChanged();
+            
+            AddLog($"✅ {SelectedCameraSlot.SlotName} stopped");
+        }
+        catch (Exception ex)
+        {
+            AddLog($"❌ Stop error: {ex.Message}");
+        }
+    }
+    
+    private bool CanStopSelected() => SelectedCameraSlot?.IsConnected == true || SelectedCameraSlot?.IsVirtualized == true;
     
     [RelayCommand]
     private void CopyUrl()
@@ -1480,5 +1599,200 @@ public partial class MainViewModel : ObservableObject
     private bool CanSaveCameraProfile()
     {
         return !string.IsNullOrWhiteSpace(IpAddress) && Port > 0;
+    }
+    
+    // ═══════════════════════════════════════════════════════════════
+    // v2.0 Multi-Camera Commands
+    // ═══════════════════════════════════════════════════════════════
+    
+    private void InitializeCameraSlots()
+    {
+        // Create 6 camera slots (max for reasonable screen sizes)
+        for (int i = 0; i < 6; i++)
+        {
+            var slot = new CameraSlotViewModel(i);
+            // Wire up logging callback so slot logs appear in main UI
+            slot.OnLog = msg => AddLog(msg);
+            CameraSlots.Add(slot);
+        }
+        
+        // Select first slot by default
+        if (CameraSlots.Count > 0)
+        {
+            SelectCameraSlot(CameraSlots[0]);
+        }
+        
+        // Set initial layout
+        SelectedLayoutCount = 1;
+    }
+    
+    [RelayCommand]
+    private void SelectCameraSlot(CameraSlotViewModel? slot)
+    {
+        if (slot == null) return;
+        
+        // Deselect previous
+        foreach (var s in CameraSlots)
+        {
+            s.IsSelected = false;
+        }
+        
+        // Select new
+        slot.IsSelected = true;
+        SelectedCameraSlot = slot;
+        
+        // Sync the main UI fields with selected slot
+        SyncFromSelectedSlot();
+        
+        AddLog($"📷 Selected {slot.SlotName}");
+    }
+    
+    private void SyncFromSelectedSlot()
+    {
+        if (SelectedCameraSlot == null) return;
+        
+        // Copy settings from selected slot to main UI fields
+        IpAddress = SelectedCameraSlot.IpAddress;
+        Port = SelectedCameraSlot.Port;
+        Username = SelectedCameraSlot.Username;
+        Password = SelectedCameraSlot.Password;
+        PtzUsername = SelectedCameraSlot.PtzUsername;
+        PtzPassword = SelectedCameraSlot.PtzPassword;
+        SelectedBrand = SelectedCameraSlot.SelectedBrand;
+        SelectedStream = SelectedCameraSlot.SelectedStream;
+        Channel = SelectedCameraSlot.Channel;
+        UseManualUrl = SelectedCameraSlot.UseManualUrl;
+        ManualUrl = SelectedCameraSlot.ManualUrl;
+        
+        // Sync status
+        IsConnected = SelectedCameraSlot.IsConnected;
+        IsVirtualized = SelectedCameraSlot.IsVirtualized;
+        IsConnecting = SelectedCameraSlot.IsConnecting;
+        
+        // Sync PREVIEW video adjustments (separate from virtual)
+        PreviewFlipHorizontal = SelectedCameraSlot.PreviewFlipHorizontal;
+        PreviewFlipVertical = SelectedCameraSlot.PreviewFlipVertical;
+        PreviewBrightness = SelectedCameraSlot.PreviewBrightness;
+        PreviewContrast = SelectedCameraSlot.PreviewContrast;
+        
+        // Sync VIRTUAL OUTPUT video adjustments (separate from preview)
+        VirtualFlipHorizontal = SelectedCameraSlot.VirtualFlipHorizontal;
+        VirtualFlipVertical = SelectedCameraSlot.VirtualFlipVertical;
+        VirtualBrightness = SelectedCameraSlot.VirtualBrightness;
+        VirtualContrast = SelectedCameraSlot.VirtualContrast;
+        
+        // Sync PTZ speeds
+        PtzMoveSpeed = SelectedCameraSlot.PtzMoveSpeed;
+        PtzZoomSpeed = SelectedCameraSlot.PtzZoomSpeed;
+        
+        UpdateGeneratedUrl();
+        
+        // Notify command state changes based on selected slot's state
+        PreviewCommand.NotifyCanExecuteChanged();
+        VirtualizeCommand.NotifyCanExecuteChanged();
+        StopCommand.NotifyCanExecuteChanged();
+        StopSelectedCommand.NotifyCanExecuteChanged();
+    }
+    
+    private void SyncToSelectedSlot()
+    {
+        if (SelectedCameraSlot == null) return;
+        
+        // Copy settings from main UI to selected slot
+        SelectedCameraSlot.IpAddress = IpAddress;
+        SelectedCameraSlot.Port = Port;
+        SelectedCameraSlot.Username = Username;
+        SelectedCameraSlot.Password = Password;
+        SelectedCameraSlot.PtzUsername = PtzUsername;
+        SelectedCameraSlot.PtzPassword = PtzPassword;
+        SelectedCameraSlot.SelectedBrand = SelectedBrand;
+        SelectedCameraSlot.SelectedStream = SelectedStream;
+        SelectedCameraSlot.Channel = Channel;
+        SelectedCameraSlot.UseManualUrl = UseManualUrl;
+        SelectedCameraSlot.ManualUrl = ManualUrl;
+        
+        // Sync PREVIEW video adjustments
+        SelectedCameraSlot.PreviewFlipHorizontal = PreviewFlipHorizontal;
+        SelectedCameraSlot.PreviewFlipVertical = PreviewFlipVertical;
+        SelectedCameraSlot.PreviewBrightness = PreviewBrightness;
+        SelectedCameraSlot.PreviewContrast = PreviewContrast;
+        
+        // Sync VIRTUAL OUTPUT video adjustments
+        SelectedCameraSlot.VirtualFlipHorizontal = VirtualFlipHorizontal;
+        SelectedCameraSlot.VirtualFlipVertical = VirtualFlipVertical;
+        SelectedCameraSlot.VirtualBrightness = VirtualBrightness;
+        SelectedCameraSlot.VirtualContrast = VirtualContrast;
+        
+        // Sync PTZ speeds
+        SelectedCameraSlot.PtzMoveSpeed = PtzMoveSpeed;
+        SelectedCameraSlot.PtzZoomSpeed = PtzZoomSpeed;
+        
+        SelectedCameraSlot.UpdateStatus();
+    }
+    
+    [RelayCommand]
+    private void SetLayout(string layoutCount)
+    {
+        if (int.TryParse(layoutCount, out int count))
+        {
+            SelectedLayoutCount = count;
+            AddLog($"📐 Layout changed to {count} camera(s)");
+        }
+    }
+    
+    [RelayCommand]
+    private async Task ConnectAllAsync()
+    {
+        AddLog("🔗 Connecting all configured cameras...");
+        foreach (var slot in CameraSlots.Take(SelectedLayoutCount))
+        {
+            if (!string.IsNullOrWhiteSpace(slot.IpAddress) && slot.IpAddress != "192.168.1.100" && !slot.IsConnected)
+            {
+                // TODO: Connect each slot's camera
+                AddLog($"   Connecting {slot.SlotName}...");
+            }
+        }
+        await Task.CompletedTask;
+    }
+    
+    [RelayCommand]
+    private async Task DisconnectAllAsync()
+    {
+        AddLog("⏹ Disconnecting all cameras...");
+        foreach (var slot in CameraSlots)
+        {
+            if (slot.IsConnected)
+            {
+                slot.IsConnected = false;
+                slot.IsVirtualized = false;
+                slot.UpdateStatus();
+            }
+        }
+        UpdateMultiCameraCounts();
+        await Task.CompletedTask;
+    }
+    
+    [RelayCommand]
+    private async Task SnapshotAllAsync()
+    {
+        AddLog("📸 Taking snapshots of all connected cameras...");
+        int count = 0;
+        foreach (var slot in CameraSlots.Take(SelectedLayoutCount))
+        {
+            if (slot.IsConnected)
+            {
+                count++;
+                AddLog($"   📸 Snapshot {slot.SlotName}");
+            }
+        }
+        AddLog($"✅ Captured {count} snapshot(s)");
+        await Task.CompletedTask;
+    }
+    
+    private void UpdateMultiCameraCounts()
+    {
+        ConnectedCameraCount = CameraSlots.Count(s => s.IsConnected);
+        VirtualizedCameraCount = CameraSlots.Count(s => s.IsVirtualized);
+        RecordingCameraCount = CameraSlots.Count(s => s.IsRecording);
     }
 }

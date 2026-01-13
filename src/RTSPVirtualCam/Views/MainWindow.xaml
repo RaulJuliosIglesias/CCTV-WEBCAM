@@ -361,22 +361,127 @@
                 </Setter.Value>
             </Setter>
         </Style>
+        
+        <!-- Layout Radio Button Style for v2.0 -->
+        <Style x:Key="LayoutRadioButton" TargetType="RadioButton">
+            <Setter Property="Background" Value="#313244"/>
+            <Setter Property="Foreground" Value="#CDD6F4"/>
+            <Setter Property="Padding" Value="12,6"/>
+            <Setter Property="Margin" Value="2"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="RadioButton">
+                        <Border x:Name="border" Background="{TemplateBinding Background}" 
+                                CornerRadius="4" Padding="{TemplateBinding Padding}">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="border" Property="Background" Value="#45475A"/>
+                            </Trigger>
+                            <Trigger Property="IsChecked" Value="True">
+                                <Setter TargetName="border" Property="Background" Value="#89B4FA"/>
+                                <Setter Property="Foreground" Value="#1E1E2E"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
     </Window.Resources>
     
     <Grid>
-        <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="340"/>
-            <ColumnDefinition Width="5"/>
-            <ColumnDefinition Width="*"/>
-        </Grid.ColumnDefinitions>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
         
-        <!-- Left Panel - Controls -->
-        <Border Grid.Column="0" Background="#181825" Padding="12">
-            <ScrollViewer VerticalScrollBarVisibility="Auto">
-                <StackPanel>
-                    <!-- Header -->
-                    <TextBlock Text="🎥 RTSP VirtualCam" FontSize="18" FontWeight="Bold" Foreground="#CDD6F4" Margin="0,0,0,2"/>
-                    <TextBlock Text="CCTV to Webcam Converter" FontSize="10" Foreground="#6C7086" Margin="0,0,0,12"/>
+        <!-- ═══════════════════════════════════════════════════════════════ -->
+        <!-- v2.0 MULTI-CAMERA TOOLBAR -->
+        <!-- ═══════════════════════════════════════════════════════════════ -->
+        <Border Grid.Row="0" Background="#181825" Padding="10,8" BorderBrush="#313244" BorderThickness="0,0,0,1">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                
+                <!-- Layout Selector -->
+                <Border Grid.Column="0" Background="#252536" CornerRadius="6" Padding="4" Margin="0,0,15,0">
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock Text="📐 Layout:" Foreground="#6C7086" VerticalAlignment="Center" Margin="8,0,8,0" FontSize="11"/>
+                        <RadioButton Content="1" Style="{StaticResource LayoutRadioButton}" GroupName="CameraLayout" IsChecked="True"
+                                     Command="{Binding SetLayoutCommand}" CommandParameter="1"/>
+                        <RadioButton Content="2" Style="{StaticResource LayoutRadioButton}" GroupName="CameraLayout"
+                                     Command="{Binding SetLayoutCommand}" CommandParameter="2"/>
+                        <RadioButton Content="4" Style="{StaticResource LayoutRadioButton}" GroupName="CameraLayout"
+                                     Command="{Binding SetLayoutCommand}" CommandParameter="4"/>
+                        <RadioButton Content="6" Style="{StaticResource LayoutRadioButton}" GroupName="CameraLayout"
+                                     Command="{Binding SetLayoutCommand}" CommandParameter="6"/>
+                    </StackPanel>
+                </Border>
+                
+                <!-- Camera Status Counters -->
+                <StackPanel Grid.Column="1" Orientation="Horizontal">
+                    <Border Background="#313244" CornerRadius="4" Padding="10,4" Margin="0,0,8,0">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="📹" Foreground="#A6E3A1" Margin="0,0,5,0" VerticalAlignment="Center"/>
+                            <TextBlock Text="Connected:" Foreground="#6C7086" FontSize="10" VerticalAlignment="Center" Margin="0,0,4,0"/>
+                            <TextBlock Text="{Binding ConnectedCameraCount}" Foreground="#A6E3A1" FontWeight="Bold" FontSize="11" VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </Border>
+                    <Border Background="#313244" CornerRadius="4" Padding="10,4" Margin="0,0,8,0">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="🎬" Foreground="#89B4FA" Margin="0,0,5,0" VerticalAlignment="Center"/>
+                            <TextBlock Text="Virtual:" Foreground="#6C7086" FontSize="10" VerticalAlignment="Center" Margin="0,0,4,0"/>
+                            <TextBlock Text="{Binding VirtualizedCameraCount}" Foreground="#89B4FA" FontWeight="Bold" FontSize="11" VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </Border>
+                    <Border Background="#313244" CornerRadius="4" Padding="10,4">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="⏺️" Foreground="#F38BA8" Margin="0,0,5,0" VerticalAlignment="Center"/>
+                            <TextBlock Text="Recording:" Foreground="#6C7086" FontSize="10" VerticalAlignment="Center" Margin="0,0,4,0"/>
+                            <TextBlock Text="{Binding RecordingCameraCount}" Foreground="#F38BA8" FontWeight="Bold" FontSize="11" VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </Border>
+                </StackPanel>
+                
+                <!-- Spacer -->
+                <TextBlock Grid.Column="2"/>
+                
+                <!-- Global Actions -->
+                <StackPanel Grid.Column="3" Orientation="Horizontal" Margin="0,0,10,0">
+                    <Button Content="▶ Connect All" Command="{Binding ConnectAllCommand}" Style="{StaticResource SuccessButton}" Padding="10,6" FontSize="10" Margin="0,0,5,0"/>
+                    <Button Content="⏹ Stop All" Command="{Binding DisconnectAllCommand}" Style="{StaticResource DangerButton}" Padding="10,6" FontSize="10" Margin="0,0,5,0"/>
+                    <Button Content="📸 Snapshot All" Command="{Binding SnapshotAllCommand}" Style="{StaticResource SecondaryButton}" Padding="10,6" FontSize="10"/>
+                </StackPanel>
+                
+                <!-- Version Badge -->
+                <Border Grid.Column="4" Background="#89B4FA" CornerRadius="4" Padding="8,4">
+                    <TextBlock Text="v2.0" Foreground="#1E1E2E" FontWeight="Bold" FontSize="10"/>
+                </Border>
+            </Grid>
+        </Border>
+        
+        <!-- Main Content Area -->
+        <Grid Grid.Row="1">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="340"/>
+                <ColumnDefinition Width="5"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+        
+            <!-- Left Panel - Controls -->
+            <Border Grid.Column="0" Background="#181825" Padding="12">
+                <ScrollViewer VerticalScrollBarVisibility="Auto">
+                    <StackPanel>
+                        <!-- Header -->
+                        <TextBlock Text="🎥 RTSP VirtualCam" FontSize="18" FontWeight="Bold" Foreground="#CDD6F4" Margin="0,0,0,2"/>
+                        <TextBlock Text="v2.0 Multi-Camera Platform" FontSize="10" Foreground="#6C7086" Margin="0,0,0,12"/>
                     
                     <!-- ═══════════════════════════════════════ -->
                     <!-- SECTION 1: CAMERA SETUP (Collapsible) -->
@@ -734,7 +839,7 @@
                         <Button Grid.Column="1" Content="❌" Command="{Binding CancelConnectionCommand}" Style="{StaticResource DangerButton}" Padding="12,12" Visibility="{Binding IsConnecting, Converter={StaticResource BoolToVisibility}}" ToolTip="Cancel Connection"/>
                     </Grid>
                     <Button Content="📹  Virtualize as Webcam" Command="{Binding VirtualizeCommand}" Style="{StaticResource SuccessButton}" Margin="0,0,0,6"/>
-                    <Button Content="⏹  Stop All" Command="{Binding StopCommand}" Style="{StaticResource DangerButton}" Margin="0,0,0,10"/>
+                    <Button Content="⏹  Stop" Command="{Binding StopSelectedCommand}" Style="{StaticResource DangerButton}" Margin="0,0,0,10"/>
                     
                     <!-- Status -->
                     <Border Background="#252536" CornerRadius="6" Padding="10">
@@ -746,44 +851,109 @@
             </ScrollViewer>
         </Border>
         
-        <!-- GridSplitter for resizing -->
-        <GridSplitter Grid.Column="1" Width="5" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Background="#313244" ShowsPreview="False"/>
+            <!-- GridSplitter for resizing -->
+            <GridSplitter Grid.Column="1" Width="5" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Background="#313244" ShowsPreview="False"/>
         
-        <!-- Right Panel - Preview & Logs -->
-        <Grid Grid.Column="2">
+            <!-- Right Panel - Preview & Logs -->
+            <Grid Grid.Column="2">
             <Grid.RowDefinitions>
                 <RowDefinition Height="*"/>
                 <RowDefinition Height="150"/>
                 <RowDefinition Height="Auto"/>
             </Grid.RowDefinitions>
             
-            <!-- Preview Area -->
+            <!-- Preview Area with Camera Slots Grid -->
             <Border Grid.Row="0" Background="#11111B">
                 <Grid>
-                    <!-- VLC Video View (before virtualization) -->
-                    <vlc:VideoView x:Name="VideoView" 
-                                   Background="Transparent"
-                                   Visibility="{Binding IsConnected, Converter={StaticResource BoolToVisibility}}"/>
+                    <!-- Camera Slots Grid -->
+                    <ItemsControl ItemsSource="{Binding CameraSlots}" x:Name="CameraSlotsGrid">
+                        <ItemsControl.ItemsPanel>
+                            <ItemsPanelTemplate>
+                                <UniformGrid x:Name="SlotsGrid" Rows="1" Columns="1"/>
+                            </ItemsPanelTemplate>
+                        </ItemsControl.ItemsPanel>
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <Border Margin="3" CornerRadius="6" 
+                                        Background="#252536"
+                                        BorderThickness="3"
+                                        Cursor="Hand">
+                                    <Border.Style>
+                                        <Style TargetType="Border">
+                                            <Setter Property="BorderBrush" Value="#45475A"/>
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding IsSelected}" Value="True">
+                                                    <Setter Property="BorderBrush" Value="#89B4FA"/>
+                                                </DataTrigger>
+                                                <DataTrigger Binding="{Binding IsConnected}" Value="True">
+                                                    <Setter Property="Background" Value="#1E1E2E"/>
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </Border.Style>
+                                    <Border.InputBindings>
+                                        <MouseBinding MouseAction="LeftClick" 
+                                                      Command="{Binding DataContext.SelectCameraSlotCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                                                      CommandParameter="{Binding}"/>
+                                    </Border.InputBindings>
+                                    <Grid>
+                                        <!-- Preview Image or Placeholder -->
+                                        <Image Source="{Binding PreviewBitmap}" Stretch="Uniform"
+                                               Visibility="{Binding IsConnected, Converter={StaticResource BoolToVisibility}}"/>
+                                        
+                                        <!-- Not Connected Placeholder -->
+                                        <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center"
+                                                    Visibility="{Binding IsConnected, Converter={StaticResource InverseBoolToVisibility}}">
+                                            <TextBlock Text="📹" FontSize="36" HorizontalAlignment="Center" Foreground="#45475A"/>
+                                            <TextBlock Text="{Binding SlotName}" FontSize="14" Foreground="#585B70" 
+                                                       FontWeight="SemiBold" HorizontalAlignment="Center" Margin="0,8,0,0"/>
+                                            <TextBlock Text="{Binding StatusText}" FontSize="10" Foreground="#45475A" 
+                                                       HorizontalAlignment="Center" Margin="0,4,0,0"/>
+                                        </StackPanel>
+                                        
+                                        <!-- Status Overlay (top) -->
+                                        <Border VerticalAlignment="Top" HorizontalAlignment="Left" CornerRadius="0,0,6,0" Padding="8,4"
+                                                Visibility="{Binding IsConnected, Converter={StaticResource BoolToVisibility}}">
+                                            <Border.Style>
+                                                <Style TargetType="Border">
+                                                    <Setter Property="Background" Value="#A6E3A1"/>
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding IsVirtualized}" Value="True">
+                                                            <Setter Property="Background" Value="#F38BA8"/>
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </Border.Style>
+                                            <StackPanel Orientation="Horizontal">
+                                                <TextBlock Text="{Binding SlotName}" Foreground="#1E1E2E" FontSize="10" FontWeight="Bold"/>
+                                                <TextBlock Text=" - " Foreground="#1E1E2E" FontSize="10"
+                                                           Visibility="{Binding IsVirtualized, Converter={StaticResource BoolToVisibility}}"/>
+                                                <TextBlock Text="LIVE" Foreground="#1E1E2E" FontSize="10" FontWeight="Bold"
+                                                           Visibility="{Binding IsVirtualized, Converter={StaticResource BoolToVisibility}}"/>
+                                            </StackPanel>
+                                        </Border>
+                                        
+                                        <!-- Info Overlay (bottom) -->
+                                        <Border VerticalAlignment="Bottom" HorizontalAlignment="Stretch" 
+                                                Background="#CC1E1E2E" Padding="8,4"
+                                                Visibility="{Binding IsConnected, Converter={StaticResource BoolToVisibility}}">
+                                            <TextBlock Text="{Binding Resolution}" Foreground="#CDD6F4" FontSize="10"/>
+                                        </Border>
+                                        
+                                        <!-- Selection indicator -->
+                                        <Border VerticalAlignment="Top" HorizontalAlignment="Right" 
+                                                Background="#89B4FA" CornerRadius="0,0,0,6" Padding="6,3"
+                                                Visibility="{Binding IsSelected, Converter={StaticResource BoolToVisibility}}">
+                                            <TextBlock Text="✓" Foreground="#1E1E2E" FontSize="10" FontWeight="Bold"/>
+                                        </Border>
+                                    </Grid>
+                                </Border>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
                     
-                    <!-- Software Preview (during virtualization) -->
-                    <Image Source="{Binding PreviewBitmap}" 
-                           Stretch="Uniform"
-                           Visibility="{Binding IsVirtualized, Converter={StaticResource BoolToVisibility}}"/>
-                    
-                    <!-- No Signal Placeholder -->
-                    <StackPanel VerticalAlignment="Center" 
-                                HorizontalAlignment="Center"
-                                Visibility="{Binding IsConnected, Converter={StaticResource InverseBoolToVisibility}}">
-                        <TextBlock Text="📹" FontSize="64" HorizontalAlignment="Center" Foreground="#45475A"/>
-                        <TextBlock Text="No Preview" FontSize="20" Foreground="#585B70" FontWeight="SemiBold" HorizontalAlignment="Center" Margin="0,15,0,0"/>
-                        <TextBlock Text="Configure connection and click Preview" FontSize="12" Foreground="#45475A" HorizontalAlignment="Center" Margin="0,8,0,0"/>
-                    </StackPanel>
-                    
-                    <!-- Virtualized Indicator -->
-                    <Border VerticalAlignment="Top" HorizontalAlignment="Left" Background="#A6E3A1" CornerRadius="0,0,8,0" Padding="15,8"
-                            Visibility="{Binding IsVirtualized, Converter={StaticResource BoolToVisibility}}">
-                        <TextBlock Text="🔴 LIVE - Virtual Camera Active" Foreground="#1E1E2E" FontSize="12" FontWeight="SemiBold"/>
-                    </Border>
+                    <!-- Legacy VLC Video View (hidden, kept for single camera backward compatibility) -->
+                    <vlc:VideoView x:Name="VideoView" Background="Transparent" Visibility="Collapsed"/>
                     
                     <!-- Camera Settings Overlay -->
                     <Border VerticalAlignment="Bottom" HorizontalAlignment="Stretch" Background="#DD1E1E2E" 
@@ -903,6 +1073,7 @@
                     </StackPanel>
                 </Grid>
             </Border>
+        </Grid>
         </Grid>
     </Grid>
 </Window>

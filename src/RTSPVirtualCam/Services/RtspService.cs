@@ -273,6 +273,100 @@ public class RtspService : IRtspService, IDisposable
         OnLog?.Invoke("Virtual camera stopped");
     }
     
+    // Enable software rendering for embedded preview (without OBS virtual camera)
+    private bool _previewCaptureEnabled = false;
+    
+    public bool StartPreviewCapture(int width = 1280, int height = 720)
+    {
+        try
+        {
+            if (_mediaPlayer == null || _media == null)
+            {
+                OnLog?.Invoke("❌ Cannot start preview - not connected");
+                return false;
+            }
+            
+            _frameWidth = width;
+            _frameHeight = height;
+            _frameCount = 0;
+            _previewCaptureEnabled = true;
+            
+            // Allocate frame buffer for BGRA
+            int bufferSize = width * height * 4;
+            if (_frameBuffer != IntPtr.Zero)
+            {
+                Marshal.FreeHGlobal(_frameBuffer);
+            }
+            _frameBuffer = Marshal.AllocHGlobal(bufferSize);
+            
+            OnLog?.Invoke("🔄 Starting embedded preview capture...");
+            
+            // Stop current playback
+            _mediaPlayer.Stop();
+            
+            // Configure video callbacks for frame capture
+            _mediaPlayer.SetVideoCallbacks(
+                LockCallback,
+                UnlockCallback,
+                PreviewDisplayCallback
+            );
+            
+            _mediaPlayer.SetVideoFormat("RV32", (uint)width, (uint)height, (uint)(width * 4));
+            
+            // Restart playback with callbacks active
+            _mediaPlayer.Play(_media);
+            
+            OnLog?.Invoke($"✅ Preview capture active: {width}x{height}");
+            return true;
+        }
+        catch (Exception ex)
+        {
+            OnLog?.Invoke($"❌ Preview capture error: {ex.Message}");
+            return false;
+        }
+    }
+    
+    public void StopPreviewCapture()
+    {
+        _previewCaptureEnabled = false;
+        OnLog?.Invoke("Preview capture stopped");
+    }
+    
+    private void PreviewDisplayCallback(IntPtr opaque, IntPtr picture)
+    {
+        if (!_previewCaptureEnabled || _frameBuffer == IntPtr.Zero)
+            return;
+        
+        try
+        {
+            _frameCount++;
+            
+            // Copy BGRA data from buffer
+            int size = _frameWidth * _frameHeight * 4;
+            byte[] frame = new byte[size];
+            Marshal.Copy(_frameBuffer, frame, 0, size);
+            
+            // Apply flip transformations if enabled
+            if (_previewFlipHorizontal || _previewFlipVertical)
+            {
+                frame = ApplyFlip(frame, _frameWidth, _frameHeight, _previewFlipHorizontal, _previewFlipVertical);
+            }
+            
+            // Apply brightness/contrast if needed
+            if (_previewBrightness != 0 || _previewContrast != 0)
+            {
+                ApplyBrightnessContrast(frame, _previewBrightness, _previewContrast);
+            }
+            
+            // Send to UI preview (every 2nd frame to reduce load)
+            if (_frameCount % 2 == 0)
+            {
+                OnPreviewFrame?.Invoke(frame, _frameWidth, _frameHeight);
+            }
+        }
+        catch { }
+    }
+    
     private IntPtr LockCallback(IntPtr opaque, IntPtr planes)
     {
         Marshal.WriteIntPtr(planes, _frameBuffer);
