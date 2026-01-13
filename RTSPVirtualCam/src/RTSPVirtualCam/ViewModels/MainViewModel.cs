@@ -168,8 +168,8 @@ public partial class MainViewModel : ObservableObject
         // Subscribe to PTZ service logs
         _ptzService.OnLog += (msg) => AddLog(msg);
         
-        // Initialize PTZ presets (1-10 for Hikvision)
-        for (int i = 1; i <= 10; i++)
+        // Initialize PTZ presets (1-20 for Hikvision)
+        for (int i = 1; i <= 20; i++)
         {
             PtzPresets.Add(new PtzPreset { Id = i, Name = $"Preset {i}", IsEnabled = true });
         }
