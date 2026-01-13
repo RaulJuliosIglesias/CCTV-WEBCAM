@@ -31,7 +31,7 @@
 Users with Hikvision PTZ cameras (or similar IP cameras) want to use them as webcams in video conferencing apps. Currently, this requires complex setup with OBS or specialized software.
 
 ### Solution
-A lightweight, open-source Windows application that:
+A lightweight Windows application that:
 - Connects to any RTSP stream
 - Virtualizes it as a Windows camera device
 - Works with Meet, Zoom, Teams without additional drivers (Windows 11) or with a one-time setup (Windows 10)
@@ -40,7 +40,7 @@ A lightweight, open-source Windows application that:
 - **Zero or Minimal Installation**: Leverage Windows 11 native `MFCreateVirtualCamera` API
 - **Simple UX**: Just paste RTSP URL → Click "Virtualize" → Done
 - **Lightweight**: Small binary, minimal dependencies
-- **Open Source**: MIT or Apache 2.0 license
+- **Proprietary**: All rights reserved - personal use only
 
 ---
 

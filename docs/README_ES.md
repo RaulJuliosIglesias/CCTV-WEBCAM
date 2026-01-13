@@ -6,8 +6,7 @@
 
 [![.NET 8](https://img.shields.io/badge/.NET-8.0-512BD4?style=for-the-badge&logo=dotnet)](https://dotnet.microsoft.com/)
 [![Windows 11](https://img.shields.io/badge/Windows-11-0078D4?style=for-the-badge&logo=windows11)](https://www.microsoft.com/windows)
-[![License: MIT](https://img.shields.io/badge/License-MIT-green?style=for-the-badge)](../LICENSE)
-[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen?style=for-the-badge)](../CONTRIBUTING.md)
+[![License](https://img.shields.io/badge/Licencia-Propietaria-red?style=for-the-badge)](../LICENSE)
 
 <p align="center">
   <a href="../README.md">🇬🇧 English</a> | <strong>🇪🇸 Español</strong>
@@ -185,7 +184,7 @@ RTSPVirtualCam/
 │
 ├── 📄 RTSPVirtualCam.sln          # Archivo de solución
 ├── 📄 README.md                   # Documentación principal
-├── 📄 LICENSE                     # Licencia MIT
+├── 📄 LICENSE                     # Licencia Propietaria
 └── 📄 .gitignore                  # Reglas de git ignore
 ```
 
@@ -264,24 +263,6 @@ RTSPVirtualCam/
 
 ---
 
-## 🤝 Contribuir
-
-¡Las contribuciones son bienvenidas! Por favor lee nuestra [Guía de Contribución](../CONTRIBUTING.md) primero.
-
-```bash
-# Haz fork del repositorio
-# Crea tu rama de feature
-git checkout -b feature/caracteristica-increible
-
-# Haz commit de tus cambios
-git commit -m "Agrega característica increíble"
-
-# Push a la rama
-git push origin feature/caracteristica-increible
-
-# Abre un Pull Request
-```
-
 ---
 
 ## 🐛 Solución de Problemas
@@ -315,7 +296,9 @@ git push origin feature/caracteristica-increible
 
 ## 📄 Licencia
 
-Este proyecto está licenciado bajo la Licencia MIT - ver el archivo [LICENSE](../LICENSE) para más detalles.
+**© 2026 Raúl Julios Iglesias - Todos los Derechos Reservados**
+
+Este es software propietario. Solo se permite la descarga del ejecutable para uso personal del usuario final. Queda prohibido copiar, redistribuir, modificar o usar comercialmente el código fuente. Ver [LICENSE](../LICENSE) para más detalles.
 
 ---
 
@@ -329,8 +312,6 @@ Este proyecto está licenciado bajo la Licencia MIT - ver el archivo [LICENSE](.
 
 <div align="center">
 
-**Hecho con ❤️ para la comunidad open source**
-
-⭐ ¡Dale estrella a este repositorio si te resulta útil! ⭐
+**© 2026 Raúl Julios Iglesias - Todos los Derechos Reservados**
 
 </div>

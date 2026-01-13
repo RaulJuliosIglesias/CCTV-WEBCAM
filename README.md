@@ -6,8 +6,7 @@
 
 [![.NET 8](https://img.shields.io/badge/.NET-8.0-512BD4?style=for-the-badge&logo=dotnet)](https://dotnet.microsoft.com/)
 [![Windows 11](https://img.shields.io/badge/Windows-11-0078D4?style=for-the-badge&logo=windows11)](https://www.microsoft.com/windows)
-[![License: MIT](https://img.shields.io/badge/License-MIT-green?style=for-the-badge)](LICENSE)
-[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen?style=for-the-badge)](CONTRIBUTING.md)
+[![License](https://img.shields.io/badge/License-Proprietary-red?style=for-the-badge)](LICENSE)
 
 <p align="center">
   <strong>🇬🇧 English</strong> | <a href="docs/README_ES.md">🇪🇸 Español</a>
@@ -202,7 +201,7 @@ RTSPVirtualCam/
 │
 ├── 📄 RTSPVirtualCam.sln          # Solution file
 ├── 📄 README.md                   # This file
-├── 📄 LICENSE                     # MIT License
+├── 📄 LICENSE                     # Proprietary License
 └── 📄 .gitignore                  # Git ignore rules
 ```
 
@@ -281,24 +280,6 @@ RTSPVirtualCam/
 
 ---
 
-## 🤝 Contributing
-
-Contributions are welcome! Please read our [Contributing Guide](CONTRIBUTING.md) first.
-
-```bash
-# Fork the repository
-# Create your feature branch
-git checkout -b feature/amazing-feature
-
-# Commit your changes
-git commit -m "Add amazing feature"
-
-# Push to the branch
-git push origin feature/amazing-feature
-
-# Open a Pull Request
-```
-
 ---
 
 ## 🐛 Troubleshooting
@@ -332,7 +313,9 @@ git push origin feature/amazing-feature
 
 ## 📄 License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+**© 2026 Raúl Julios Iglesias - All Rights Reserved**
+
+This is proprietary software. Only downloading the executable for personal end-user use is permitted. Copying, redistribution, modification, or commercial use of the source code is strictly prohibited. See [LICENSE](LICENSE) for details.
 
 ---
 
@@ -346,8 +329,6 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 <div align="center">
 
-**Made with ❤️ for the open source community**
-
-⭐ Star this repository if you find it useful! ⭐
+**© 2026 Raúl Julios Iglesias - All Rights Reserved**
 
 </div>
